@@ -57,7 +57,9 @@ public:
     }
 
     bool init(CustomSongLayer* parent) {
-        if (!this->initWithColor({0, 0, 0, 150})) return false;
+        // NB: FLAlertLayer::init(int opacity) is the Windows-bound init
+        // (CCLayerColor::initWithColor has no win binding in 2.2081).
+        if (!FLAlertLayer::init(150)) return false;
         m_mainLayer = CCLayer::create();
         addChild(m_mainLayer);
 
