@@ -118,7 +118,7 @@ public:
             auto song = static_cast<SongInfoObject*>(ob);
             if (!song) continue;
             std::stringstream builder;
-            builder << song->m_songName << " " << song->m_artistName;
+            builder << song->m_songName.c_str() << " " << song->m_artistName.c_str();
             m_downloaded_songs.push_back({builder.str(), song});
         }
 
