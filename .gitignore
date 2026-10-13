@@ -7,3 +7,6 @@ build/
 .kaggle/*/o*/
 .kaggle/*/pkg/
 .kaggle/*/pulled*/
+
+# Kilo-installed skill copy (source of truth is .kaggle/skills/)
+.kilocode/
