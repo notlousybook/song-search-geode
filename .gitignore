@@ -1,3 +1,9 @@
 build/
 .tools/
 *.geode
+
+# Kaggle build scratch output (logs / fetched packages)
+.kaggle/*/out*/
+.kaggle/*/o*/
+.kaggle/*/pkg/
+.kaggle/*/pulled*/
