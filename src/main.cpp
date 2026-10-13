@@ -1,5 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/CustomSongLayer.hpp>
+#include <Geode/modify/CustomSongWidget.hpp>
 
 #include <sstream>
 #include <deque>
@@ -15,6 +16,66 @@ constexpr int n_widgets = 6;
 constexpr float widget_width = 350.f;
 constexpr float widget_height = 50.f;
 constexpr float widget_spacing = 5.f;
+
+// Filter modes (ported from Alphalaneous/Improved-Song-Browser's SortMode).
+enum class FilterMode {
+    Priority,
+    Name,
+    Artist,
+    ID
+};
+
+// Data scraped from Jukebox's own CustomSongWidget. Jukebox ships no public
+// API (no headers bundled), but it tags its disc button with the ID
+// "nong-button", and the disc frame comes from a spritesheet Jukebox
+// registers globally - so we can copy the icon and metadata it already
+// resolved instead of re-implementing NONG storage.
+struct NongInfo {
+    std::string discFrame;   // "JB_PinDisc.png" or "JB_PinDiscGold.png"
+    bool verified = false;
+    bool defaultActive = true;
+    std::string name;
+    std::string artist;
+};
+
+// songID -> NongInfo, filled by the spy hook below. Empty when Jukebox is
+// not installed or the song has no NONG configured.
+static std::unordered_map<int, NongInfo>& nongCache() {
+    static std::unordered_map<int, NongInfo> cache;
+    return cache;
+}
+
+static bool jukeboxPresent() {
+    return Loader::get()->getLoadedMod("fleym.nongd") != nullptr;
+}
+
+// Collect the disc Jukebox added to the widget it just built, plus the song
+// metadata it resolved. Called right after CustomSongWidget::init so Jukebox
+// has finished laying its own UI out.
+static void harvestJukeboxWidget(CustomSongWidget* widget, SongInfoObject* song) {
+    if (!jukeboxPresent() || !widget || !song) return;
+    auto node = widget->getChildByID("nong-button");
+    if (!node) return; // Jukebox found no NONG data for this song
+    auto item = static_cast<CCMenuItemSpriteExtra*>(node);
+    // getNormalImage() returns a CCNode*; Jukebox swaps this sprite for the
+    // gold variant when a NONG is verified.
+    auto spr = static_cast<CCSprite*>(item->getNormalImage());
+    if (!spr) return;
+    std::string frameName = "JB_PinDisc.png";
+    if (auto* frame = spr->displayFrame()) {
+        frameName = frame->getFrameName();
+    }
+    NongInfo info;
+    info.discFrame = frameName;
+    // Jukebox swaps in the gold disc for verified NONGs (JBSongWidget::setVerifiedUI)
+    info.verified = frameName.find("Gold") != std::string::npos;
+    // Jukebox keeps the pin visible whenever the song has NONGs configured,
+    // so the icon alone can't tell default-vs-custom; read the label it wrote.
+    info.defaultActive = true;
+    info.name = song->m_songName;
+    info.artist = song->m_artistName;
+    nongCache()[song->m_songID] = info;
+}
 
 class SimpleSongWidget;
 
@@ -36,6 +97,13 @@ public:
     // Preview plays on channel 0 via FMODAudioEngine::playMusic/stopMusic.
     gd::string m_preview_path;
     bool m_previewing = false;
+
+    // Filtering (ported from Improved-Song-Browser's SortMode togglers)
+    FilterMode m_filterMode = FilterMode::Priority;
+    bool m_ascending = false;
+    CCMenu* m_filterMenu = nullptr;
+    std::vector<CCMenuItemToggler*> m_filterTogglers;
+    CCMenuItemToggler* m_orderToggler = nullptr;
 
     bool isPreviewing(const gd::string& path) const {
         return m_previewing && m_preview_path == path;
@@ -115,9 +183,8 @@ public:
         setMouseEnabled(true);
 
         auto songs_ = MusicDownloadManager::sharedState()->getDownloadedSongs();
-        CCObject* ob;
-        CCARRAY_FOREACH(songs_, ob) {
-            auto song = static_cast<SongInfoObject*>(ob);
+        for (auto ob : CCArrayExt<SongInfoObject*>(songs_)) {
+            auto song = ob;
             if (!song) continue;
             std::stringstream builder;
             builder << song->m_songName.c_str() << " " << song->m_artistName.c_str();
@@ -125,10 +192,16 @@ public:
         }
 
         m_total_songs_label = CCLabelBMFont::create("", "goldFont.fnt");
-        m_total_songs_label->setAnchorPoint({1, 1});
+        m_total_songs_label->setAnchorPoint({0, 1});
         m_total_songs_label->setScale(0.4f);
-        m_total_songs_label->setPosition({win_size.width - 2, win_size.height});
+        // Top-left corner so the filter strip can own the top-right.
+        m_total_songs_label->setPosition({30.f, win_size.height});
         m_mainLayer->addChild(m_total_songs_label);
+
+        // Filter/sort toggler strip, togglable from settings
+        if (Mod::get()->getSettingValue<bool>("show-filters")) {
+            this->setupFilterMenu(win_size);
+        }
 
         auto menu = CCMenu::create();
         menu->setPosition({0, 0});
@@ -193,6 +266,21 @@ public:
         do_search();
     }
 
+    // The search/index string depends on the active filter mode, exactly like
+    // Improved-Song-Browser's handleSearch switches on SortMode.
+    std::string filterKeyFor(SongInfoObject* song) const {
+        switch (m_filterMode) {
+            case FilterMode::Priority:
+            case FilterMode::Name:
+                return std::string(song->m_songName.c_str());
+            case FilterMode::Artist:
+                return std::string(song->m_artistName.c_str());
+            case FilterMode::ID:
+                return std::to_string(song->m_songID);
+        }
+        return "";
+    }
+
     void do_search() {
         if (m_downloaded_songs.empty()) return;
         std::vector<std::pair<int, SongInfoObject*>> songs;
@@ -201,13 +289,22 @@ public:
         const bool empty_input = input_value.empty();
         for (const auto& [index_str, song] : m_downloaded_songs) {
             int score = 0;
-            if (!empty_input && !fts::fuzzy_match(input_value.c_str(), index_str.c_str(), score)) continue;
+            const std::string key = filterKeyFor(song);
+            if (!empty_input && input_value != "." && !fts::fuzzy_match(input_value.c_str(), key.c_str(), score)) continue;
             songs.push_back({score, song});
         }
         if (!empty_input && songs.size() > 1) {
             std::sort(songs.begin(), songs.end(), [&](const auto& a, const auto& b) {
                 return a.first > b.first;
             });
+        } else {
+            // No query (or '.' intentional empty search): fall back to the
+            // mode's natural ordering so the list is still useful.
+            std::stable_sort(songs.begin(), songs.end(),
+                [this](const auto& a, const auto& b) { return sortLess(a.second, b.second); });
+            if (m_ascending) {
+                std::reverse(songs.begin(), songs.end());
+            }
         }
         m_sorted.clear();
         m_sorted.reserve(songs.size());
@@ -222,9 +319,144 @@ public:
         stream << m_sorted.size() << " result";
         if (m_sorted.size() != 1)
             stream << "s";
-        m_total_songs_label->setString(stream.str().c_str());
+        m_total_songs_label->setString(stream.str().c_str(), true);
 
         move_delete_btn();
+    }
+
+    bool sortLess(SongInfoObject* a, SongInfoObject* b) const {
+        switch (m_filterMode) {
+            case FilterMode::Priority:
+                return false; // priority ordering is GD's, leave as-is
+            case FilterMode::Artist: {
+                std::string x(a->m_artistName.c_str()), y(b->m_artistName.c_str());
+                for (auto& c : x) c = static_cast<char>(std::tolower((unsigned char)c));
+                for (auto& c : y) c = static_cast<char>(std::tolower((unsigned char)c));
+                return x < y;
+            }
+            case FilterMode::Name: {
+                std::string x(a->m_songName.c_str()), y(b->m_songName.c_str());
+                for (auto& c : x) c = static_cast<char>(std::tolower((unsigned char)c));
+                for (auto& c : y) c = static_cast<char>(std::tolower((unsigned char)c));
+                return x < y;
+            }
+            case FilterMode::ID:
+                return a->m_songID < b->m_songID;
+        }
+        return false;
+    }
+
+    void setFilterMode(FilterMode mode, CCMenuItemToggler* toggler) {
+        m_filterMode = mode;
+        for (auto* t : m_filterTogglers) {
+            if (t) t->toggle(false);
+        }
+        if (toggler) toggler->toggle(true);
+        do_search();
+    }
+
+    void toggleOrder(CCObject*) {
+        m_ascending = !m_ascending;
+        if (m_orderToggler) {
+            m_orderToggler->toggle(m_ascending);
+        }
+        do_search();
+    }
+
+    // Builds a button-looking node (GD button background + our icon on top)
+    // for one side of a CCMenuItemToggler.
+    static CCNode* makeTogglerNode(ZStringView sprite, bool useFrameName, const char* bgFrame, float scale) {
+        auto background = CCSprite::createWithSpriteFrameName(bgFrame);
+        if (!background) return nullptr;
+        CCSprite* icon = useFrameName
+            ? CCSprite::createWithSpriteFrameName(sprite.c_str())
+            : CCSprite::create(sprite.c_str());
+        if (!icon) return nullptr;
+        auto node = CCNode::create();
+        node->addChild(background);
+        node->addChild(icon);
+        node->setContentSize(background->getContentSize());
+        node->setScale(scale);
+        return node;
+    }
+
+    CCMenuItemToggler* createToggler(
+        ZStringView sprite, bool useFrameName,
+        geode::Function<void(CCMenuItemToggler*)> callback,
+        bool alt = false, float scale = 1.f
+    ) {
+        // Alt = brighter base, matching Improved-Song-Browser's toggler look
+        const char* onBg = alt ? "GJ_button_02.png" : "GJ_button_03.png";
+        const char* offBg = alt ? "GJ_button_05.png" : "GJ_button_01.png";
+        auto on = makeTogglerNode(sprite, useFrameName, onBg, scale);
+        auto off = makeTogglerNode(sprite, useFrameName, offBg, scale);
+        if (!on || !off) return nullptr;
+        // CCMenuItemToggler sizes itself from the sprites it is given
+        return CCMenuItemExt::createToggler(on, off, std::move(callback));
+    }
+
+    void setupFilterMenu(const CCSize& win_size) {
+        if (m_filterMenu) return;
+        m_filterMenu = CCMenu::create();
+        m_filterMenu->setID("filter-menu"_spr);
+        m_filterMenu->setPosition({win_size.width - 100.f, win_size.height - 25.f});
+        m_filterMenu->setScale(0.45f);
+        m_filterMenu->setLayout(
+            SimpleRowLayout::create()
+                ->setMainAxisAlignment(MainAxisAlignment::Start)
+                ->setMainAxisScaling(AxisScaling::Fit)
+                ->setCrossAxisScaling(AxisScaling::Fit)
+                ->setGap(3.f)
+        );
+        m_mainLayer->addChild(m_filterMenu);
+
+        m_orderToggler = this->createToggler(
+            "GJ_sortIcon_001.png", true,
+            [this](CCMenuItemToggler* t) {
+                m_ascending = !m_ascending;
+                t->toggle(m_ascending);
+                do_search();
+            },
+            false, 1.f
+        );
+        if (m_orderToggler) {
+            m_orderToggler->setID("order-btn"_spr);
+            m_filterMenu->addChild(m_orderToggler);
+        }
+
+        auto spacer = CCNode::create();
+        spacer->setContentSize({1.f, 3.f});
+        m_filterMenu->addChild(spacer);
+
+        auto* prio = this->createToggler(
+            "GJ_timeIcon_001.png", true,
+            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Priority, t); },
+            true, 0.95f
+        );
+        if (prio) { prio->setID("priority-btn"_spr); prio->toggle(true); m_filterTogglers.push_back(prio); m_filterMenu->addChild(prio); }
+
+        auto* name = this->createToggler(
+            "GJ_noteIcon_001.png", true,
+            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Name, t); },
+            true, 0.95f
+        );
+        if (name) { name->setID("name-btn"_spr); m_filterTogglers.push_back(name); m_filterMenu->addChild(name); }
+
+        auto* artist = this->createToggler(
+            "resources/artist_icon.png", false,
+            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Artist, t); },
+            true, 0.98f
+        );
+        if (artist) { artist->setID("artist-btn"_spr); m_filterTogglers.push_back(artist); m_filterMenu->addChild(artist); }
+
+        auto* id = this->createToggler(
+            "resources/id_icon.png", false,
+            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::ID, t); },
+            true, 0.95f
+        );
+        if (id) { id->setID("id-btn"_spr); m_filterTogglers.push_back(id); m_filterMenu->addChild(id); }
+
+        m_filterMenu->updateLayout();
     }
 
     void on_close(CCObject*) {
@@ -301,6 +533,7 @@ protected:
     SongInfoObject* m_song = nullptr;
     CCLabelBMFont* m_name_label = nullptr;
     CCLabelBMFont* m_artist_label = nullptr;
+    CCSprite* m_nong_icon = nullptr;
     CCMenuItemSpriteExtra* m_play_button = nullptr;
     CustomSongSearchLayer* m_parent = nullptr;
 public:
@@ -322,6 +555,17 @@ public:
         m_artist_label->setPosition({-width / 2.f + 8.f, height / 2.f - 21.6f});
         m_artist_label->setScale(0.6f);
         addChild(m_artist_label);
+        // NONG disc for the row. Jukebox registers JB_PinDisc.png in a global
+        // spritesheet, so the frame resolves whenever it is installed; the
+        // sprite just stays hidden otherwise.
+        m_nong_icon = CCSprite::createWithSpriteFrameName("JB_PinDisc.png");
+        if (m_nong_icon) {
+            m_nong_icon->setPosition({-width / 2.f + 16.f, height / 2.f + 15.f});
+            m_nong_icon->setScale(0.45f);
+            m_nong_icon->setID("nong-symbol"_spr);
+            m_nong_icon->setVisible(false);
+            addChild(m_nong_icon);
+        }
         auto menu = CCMenu::create();
         addChild(menu);
         m_play_button = CCMenuItemSpriteExtra::create(
@@ -346,11 +590,42 @@ public:
 
     void set_song(SongInfoObject* song) {
         m_song = song;
-        m_artist_label->setString(m_song->m_artistName.c_str());
-        m_name_label->setString(m_song->m_songName.c_str());
+        auto nong_it = nongCache().find(song->m_songID);
+        const bool hasNong = nong_it != nongCache().end();
+        const bool useNongNames =
+            hasNong && Mod::get()->getSettingValue<bool>("use-nong-metadata");
+        // Jukebox may have already swapped name/artist on the SongInfoObject;
+        // the cache lets us prefer those without re-reading its state.
+        // NB: Geode 5.11's CCLabelBMFont::setString takes (const char*, bool).
+        const std::string artistText =
+            useNongNames ? nong_it->second.artist : song->m_artistName.c_str();
+        const std::string nameText =
+            useNongNames ? nong_it->second.name : song->m_songName.c_str();
+        m_artist_label->setString(artistText.c_str(), true);
+        m_name_label->setString(nameText.c_str(), true);
         float scale = (std::min)(0.8f, 250.f / m_name_label->getContentSize().width);
         m_name_label->setScale((std::min)(scale, 15.f / m_name_label->getContentSize().height));
+        update_nong_icon();
         update_play_btn();
+    }
+
+    // Renders Jukebox's own disc sprite in the row. No-op when Jukebox is
+    // missing or the setting is off, so the mod stays fully functional.
+    void update_nong_icon() {
+        if (!m_nong_icon) return;
+        bool show = false;
+        if (m_song && Mod::get()->getSettingValue<bool>("nong-symbols")) {
+            auto it = nongCache().find(m_song->m_songID);
+            if (it != nongCache().end()) {
+                auto frame = CCSpriteFrameCache::get()->spriteFrameByName(it->second.discFrame.c_str());
+                if (frame) {
+                    m_nong_icon->setDisplayFrame(frame);
+                    m_nong_icon->setColor(it->second.verified ? ccColor3B{255, 236, 140} : ccColor3B{255, 255, 255});
+                    show = true;
+                }
+            }
+        }
+        m_nong_icon->setVisible(show);
     }
 
     void update_play_btn() {
@@ -462,7 +737,35 @@ void CustomSongSearchLayer::update_scroll_elements(bool force) {
 
 class $modify(SongSearchCustomSongLayer, CustomSongLayer) {
     void onSongBrowser(CCObject* sender) {
+        // Settings live in Geode's registry, so a disabled mod is a silent
+        // pass-through to the original browser.
+        if (Mod::get()->getSettingValue<bool>("disable-mod")) {
+            CustomSongLayer::onSongBrowser(sender);
+            return;
+        }
         (void)sender;
         CustomSongSearchLayer::create(this)->show();
+    }
+};
+
+// Spy hook: Jukebox draws its own NONG disc on CustomSongWidget and ships no
+// public API, so harvest the icon and metadata it already resolved and
+// repaint them in our rows. Only active while Jukebox is installed; without
+// it this hook is a cheap no-op.
+class $modify(SongSearchJukeboxSpy, CustomSongWidget) {
+    struct Fields {};
+
+    bool init(SongInfoObject* song, CustomSongDelegate* delegate, bool showSelect,
+              bool showPlay, bool showDownload, bool isRobtopSong, bool unk1,
+              bool isMusicLibrary, int unk2) {
+        if (!CustomSongWidget::init(song, delegate, showSelect, showPlay, showDownload,
+                                    isRobtopSong, unk1, isMusicLibrary, unk2)) {
+            return false;
+        }
+        // Runs after Jukebox's own init hook, so its UI is already in place.
+        if (jukeboxPresent() && Mod::get()->getSettingValue<bool>("nong-symbols")) {
+            harvestJukeboxWidget(this, song);
+        }
+        return true;
     }
 };

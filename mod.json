@@ -1,17 +1,68 @@
 {
-	"geode": "v5.11.0",
+	"geode": "5.11.1",
 	"gd": {
-		"win": "2.2081",
+		"win": "*",
 		"android": "*",
 		"mac": "*",
 		"ios": "*"
 	},
 	"id": "matcool.song-search",
 	"name": "Song Search",
-	"version": "v1.0.0",
-	"developer": "matcool",
-	"description": "Search downloaded songs with fuzzy matching. Port of matcool/small-gd-mods song-search to Geode.",
-	"dependencies": {
-		"geode.node-ids": ">=v1.20.0"
+	"version": "v0.2.0",
+	"developers": [
+		"notlousybook",
+		"matcool"
+	],
+	"description": "Search and filter downloaded songs with fuzzy matching, plus sortable filter buttons and Jukebox NONG support.",
+	"tags": [
+		"music",
+		"interface",
+		"enhancement"
+	],
+	"settings": {
+		"general": {
+			"type": "title",
+			"name": "General"
+		},
+		"disable-mod": {
+			"type": "bool",
+			"name": "Disable Song Search",
+			"description": "Turn the search dialog off entirely and restore the default song browser.",
+			"default": false
+		},
+		"show-filters": {
+			"type": "bool",
+			"name": "Show filter buttons",
+			"description": "Show the sort/filter toggle buttons in the corner of the search dialog.",
+			"default": true
+		},
+		"jukebox": {
+			"type": "title",
+			"name": "Jukebox NONG support"
+		},
+		"nong-symbols": {
+			"type": "bool",
+			"name": "Show NONG symbols",
+			"description": "Show a disc on songs that have a NONG set in Jukebox. Requires Jukebox to be installed; does nothing without it.",
+			"default": true
+		},
+		"use-nong-metadata": {
+			"type": "bool",
+			"name": "Use NONG name and artist",
+			"description": "Display the NONG's name and artist in results when available instead of the original Newgrounds song.",
+			"default": true
+		}
+	},
+	"resources": {
+		"sprites": [
+			"resources/*.png"
+		]
+	},
+	"links": {
+		"source": "https://github.com/matcool/small-gd-mods"
+	},
+	"issues": {
+		"info": "Report issues on the GitHub repository of the original mod, or in the Song Search thread.",
+		"url": "https://github.com/matcool/small-gd-mods/issues"
 	}
 }

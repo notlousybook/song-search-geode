@@ -1,0 +1,185 @@
+== 1. deps: clang clang-tools lld llvm cmake git ==
+== clang 18 < 19 -> apt.llvm.org llvm-toolchain-noble-19 ==
+cmake : cmake version 3.31.10
+git   : git version 2.43.0
+ninja : 1.13.2.git.kitware.jobserver-pipe-1
+clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl : MISSING
+lld-link : OK
+llvm-lib : OK
+llvm-nm : OK
+llvm-mt : OK
+llvm-rc : OK
+== clang-cl absent -> linking /usr/lib/llvm-19/bin/clang as clang-cl ==
+clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl: Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl : OK
+lld-link : OK
+llvm-lib : OK
+llvm-nm : OK
+llvm-mt : OK
+llvm-rc : OK
+== DEPS DONE ==
+== 2. xwin splat (MSVC CRT + Windows SDK) ==
+xwin 0.10.0
+--- xwin splat attempt 1/60 ---
+== xwin splat OK on attempt 1 ==
+xwin done=1
+--- splat layout ---
+  OK   crt/include
+  OK   crt/lib/x86_64
+  OK   sdk/include/ucrt
+  OK   sdk/include/um
+  OK   sdk/include/shared
+  OK   sdk/include/winrt
+  OK   sdk/lib/ucrt/x86_64
+  OK   sdk/lib/um/x86_64
+  Windows.h present
+== 3. toolchain + Geode CLI + Geode SDK + bindings ==
+Cloning into 'toolchain'...
+clang-cl-msvc.cmake
+clang-msvc.cmake
+dumpbin
+example
+LICENSE
+llvm-mt-wrapper
+llvm-rc-wrapper
+msvc
+powershell
+README.md
+winsdk
+geode 3.9.0
+| Done | A new profile named 'kaggle' has been created
+| Fail | Platform must be specified for this system
+| Fail | 'kaggle' is already the current profile
+profiles:
+* kaggle [ path = /tmp/work/gd-scratch ]
+Cloning into 'sdk'...
+| Done | Successfully set SDK path to /tmp/work/sdk
+fmod.lib
+gd-libcurl.lib
+glew32.lib
+libcocos2d.lib
+libExtensions.lib
+sdk version: 5.11.1
+| Fail | Unable to get SDK path: Unable to find Geode SDK (GEODE_SDK isn't set). Please install it using `geode sdk install` or use `geode sdk set-path` to set it to an existing clone. If you just installed the SDK using `geode sdk install`, please restart your terminal / computer to apply changes.
+== install-binaries did not provide Geode.lib -> fetching loader zip directly ==
+== installed Geode.lib from /tmp/work/geode-win/Geode.lib ==
+total 1124
+drwxr-xr-x 2 root root    4096 Oct 11 15:17 .
+drwxr-xr-x 3 root root    4096 Oct 11 15:17 ..
+-rw-r--r-- 1 root root 1142370 Oct 11 15:17 Geode.lib
+Cloning into 'bindings'...
+Cocos2d.bro
+Entry.bro
+Extras.bro
+FMOD.bro
+GeometryDash.bro
+inline
+Kazmath.bro
+== TOOLCHAIN DONE ==
+== 4. mod source + native logic test ==
+./CMakeLists.txt
+./.gitignore
+./mod.json
+./src/fts_fuzzy_match.h
+./src/main.cpp
+./tests/logic_test.cpp
+ALL LOGIC TESTS PASSED
+== logic test rc=0 ==
+== 5. configure (cross-compile -> Win64) ==
+-- "LLVM_PATH" not set, leaving blank
+-- Using existing symlinks, skipping generation
+-- The C compiler identification is Clang 19.1.7 with MSVC-like command-line
+-- The CXX compiler identification is Clang 19.1.7 with MSVC-like command-line
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/local/bin/clang-cl - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/bin/clang-cl - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Geode: /tmp/work/sdk
+-- Version: 5.11.1
+-- Using /tmp/work/bindings for bindings repo
+-- Looking for ccache/sccache
+-- Looking for ccache/sccache - not found
+Not using a caching compiler (ccache/sccache). It is recommended to install one to improve build times.
+We recommend sccache, check its README for installation instructions, normally you can just use your usual package manager (e.g. 'scoop install sccache').
+Because of this, PCH will be enabled.
+-- Pre-compiled headers - ON
+-- Found Geode CLI: /tmp/work/geode-cli/geode (version 3.9.0)
+-- CPM: Adding package result@1.4.1 (v1.4.1)
+-- CPM: Adding package json@3.3.1 (v3.3.1)
+-- CPM: Adding package nontype_functional@6 (6d1d08c)
+-- CPM: Adding package fmt@5 (5ac44cd)
+-- {fmt} version: 12.1.0
+-- Build type: Release
+-- Performing Test HAS_NULLPTR_WARNING
+-- Performing Test HAS_NULLPTR_WARNING - Success
+-- CPM: Adding package asp2@ (ecea33b)
+-- CPM: Adding package arc@1.5.11 (v1.5.11)
+-- Arc features: time
+-- CPM: Adding package TulipHook@3.1.15 (v3.1.15)
+-- Performing Test SUPPORTS_W_NO_EVERYTHING
+-- Performing Test SUPPORTS_W_NO_EVERYTHING - Success
+-- Downloading Codegen
+Set SKIP_BUILDING_CODEGEN to OFF to force codegen to build locally.
+-- Downloading Codegen - success
+-- Skipping building Codegen
+-- Running Codegen
+'/kaggle/working/song-search/build/bindings/codegen/Codegen' 'Win64' '/tmp/work/bindings/bindings/2.2081' '/kaggle/working/song-search/build/bindings/bindings'
+-- Setting up song-search
+-- Mod matcool.song-search is compiling for Geode version 5.11.1
+-- Mod matcool.song-search is compiling for Geometry Dash version 2.2081
+-- Configuring done (19.4s)
+-- Generating done (0.2s)
+-- Build files have been written to: /kaggle/working/song-search/build
+configure rc=0
+== 6. build ==
+[0/2] Re-checking globbed directories...
+[1/30] Building CXX object _deps/fmt-build/CMakeFiles/fmt.dir/src/os.cc.obj
+[2/30] Building CXX object _deps/fmt-build/CMakeFiles/fmt.dir/src/format.cc.obj
+[3/30] Linking CXX static library _deps/fmt-build/fmt.lib
+[4/30] Building CXX object _deps/asp2-build/CMakeFiles/asp.dir/Unity/unity_0_cxx.cxx.obj
+[5/30] Linking CXX static library _deps/asp2-build/asp.lib
+[6/30] Building CXX object _deps/arc-build/CMakeFiles/arc.dir/Unity/unity_0_cxx.cxx.obj
+[7/30] Linking CXX static library _deps/arc-build/arc.lib
+[8/30] Running Codegen
+[9/30] Building CXX object CMakeFiles/song-search.dir/cmake_pch.cxx.obj
+[10/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_14_cxx.cxx.obj
+[11/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_13_cxx.cxx.obj
+[12/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_12_cxx.cxx.obj
+[13/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_11_cxx.cxx.obj
+[14/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_10_cxx.cxx.obj
+[15/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_8_cxx.cxx.obj
+[16/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_9_cxx.cxx.obj
+[17/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_7_cxx.cxx.obj
+[18/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_6_cxx.cxx.obj
+[19/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_5_cxx.cxx.obj
+[20/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_2_cxx.cxx.obj
+[21/30] Building CXX object CMakeFiles/song-search.dir/src/main.cpp.obj
+FAILED: [code=1] CMakeFiles/song-search.dir/src/main.cpp.obj 
+/usr/local/bin/clang-cl  /nologo -TP -DARC_FEATURE_TIME=1 -DGEODE_COMP_GD_VERSION=22081 -DGEODE_GD_VERSION=2.2081 -DGEODE_GD_VERSION_STRING=\"2.2081\" -DGEODE_MOD_ID=\"matcool.song-search\" -DMAT_JSON_DYNAMIC=1 -DNOMINMAX -DPROJECT_NAME=song-search -D_HAS_ITERATOR_DEBUGGING=0 -Dsong_search_EXPORTS -I/tmp/work/sdk/loader/include -I/tmp/work/sdk/loader/include/Geode/cocos/include -I/tmp/work/sdk/loader/include/Geode/cocos/extensions -I/tmp/work/sdk/loader/include/Geode/fmod -imsvc/kaggle/working/song-search/build/bindings/bindings -imsvc/tmp/work/bindings/bindings/include -imsvc/kaggle/working/song-search/build/_deps/fmt-src/include -imsvc/kaggle/working/song-search/build/_deps/tuliphook-src/include -imsvc/kaggle/working/song-search/build/_deps/result-src/include -imsvc/kaggle/working/song-search/build/_deps/json-src/include -imsvc/kaggle/working/song-search/build/_deps/nontype_functional-src/include -imsvc/kaggle/working/song-search/build/_deps/asp2-src/include -imsvc/kaggle/working/song-search/build/_deps/arc-src/include -Xclang -fexceptions -Xclang -fcxx-exceptions -Xclang -D_CRT_SECURE_NO_WARNINGS --target=x86_64-windows-msvc -fms-compatibility-version=19.37 -Wno-unused-command-line-argument -imsvc /tmp/work/splat/crt/include -imsvc /tmp/work/splat/sdk/include/ucrt -imsvc /tmp/work/splat/sdk/include/shared -imsvc /tmp/work/splat/sdk/include/um -imsvc /tmp/work/splat/sdk/include/winrt -Xclang -ivfsoverlay -Xclang /kaggle/working/song-search/build/winsdk_vfs_overlay.yaml /O2 /Ob2 /DNDEBUG -clang:-std=c++23 -Xclang -ivfsoverlay -Xclang /kaggle/working/song-search/build/winsdk_vfs_overlay.yaml -MD -Werror=return-type /bigobj /Yu/kaggle/working/song-search/build/CMakeFiles/song-search.dir/cmake_pch.hxx /Fp/kaggle/working/song-search/build/CMakeFiles/song-search.dir/./cmake_pch.cxx.pch /FI/kaggle/working/song-search/build/CMakeFiles/song-search.dir/cmake_pch.hxx /showIncludes /FoCMakeFiles/song-search.dir/src/main.cpp.obj /FdCMakeFiles/song-search.dir/ -c -- /kaggle/working/song-search/src/main.cpp
+/kaggle/working/song-search/src/main.cpp(119,9): error: static assertion failed: Please use `for (auto obj : CCArrayExt(arr))` or `for (auto obj : CCArrayExt<NodeType*>(arr))` instead, this macro has been removed in Geode v5
+When iterating over the children of a node, `for (CCNode* node : node->getChildrenExt())` or `for (CCNode* node : node->getChildrenExt<NodeType*>())` can also be used
+
+  119 |         CCARRAY_FOREACH(songs_, ob) {
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/work/sdk/loader/include/Geode/cocos/extensions/GUI/CCControlExtension/../../../include/../actions/../base_nodes/../cocoa/CCArray.h(36,19): note: expanded from macro 'CCARRAY_FOREACH'
+   36 |     static_assert(false, \
+      |                   ^~~~~
+/kaggle/working/song-search/src/main.cpp(121,24): error: 'continue' statement not in loop statement
+  121 |             if (!song) continue;
+      |                        ^
+2 errors generated.
+[22/30] Building CXX object CMakeFiles/song-search.dir/tmp/work/sdk/entry.cpp.obj
+[23/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_4_cxx.cxx.obj
+[24/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_1_cxx.cxx.obj
+[25/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_3_cxx.cxx.obj
+[26/30] Building CXX object bindings/CMakeFiles/GeodeBindings.dir/Unity/unity_0_cxx.cxx.obj
+ninja: build stopped: subcommand failed.
+build rc=1

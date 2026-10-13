@@ -1,0 +1,84 @@
+[{"stream_name":"stderr","time":9.076841492,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.077054707,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.077064004,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.077068147,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":9.869903369,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.869980466,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.869988764,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.869993929,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":61.103881913,"data":"== 1. deps: clang clang-tools lld llvm cmake git ==\n"}
+,{"stream_name":"stdout","time":61.103928578,"data":"== clang 18 \u003c 19 -\u003e apt.llvm.org llvm-toolchain-noble-19 ==\n"}
+,{"stream_name":"stdout","time":61.103937841,"data":"cmake : cmake version 3.31.10\n"}
+,{"stream_name":"stdout","time":61.10394327,"data":"git   : git version 2.43.0\n"}
+,{"stream_name":"stdout","time":61.103949832,"data":"ninja : 1.13.2.git.kitware.jobserver-pipe-1\n"}
+,{"stream_name":"stdout","time":61.103956248,"data":"clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)\n"}
+,{"stream_name":"stdout","time":61.103962231,"data":"clang-cl : MISSING\n"}
+,{"stream_name":"stdout","time":61.103967344,"data":"lld-link : OK\n"}
+,{"stream_name":"stdout","time":61.103972516,"data":"llvm-lib : OK\n"}
+,{"stream_name":"stdout","time":61.103977866,"data":"llvm-nm : OK\n"}
+,{"stream_name":"stdout","time":61.103982954,"data":"llvm-mt : OK\n"}
+,{"stream_name":"stdout","time":61.103988747,"data":"llvm-rc : OK\n"}
+,{"stream_name":"stdout","time":61.103994012,"data":"FATAL clang-cl missing\n"}
+,{"stream_name":"stderr","time":61.65237262,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":61.653347222,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":61.653377627,"data":"    import sys;import papermill as pm;pm.execute_notebook(\"__notebook__.ipynb\",\"__notebook__.ipynb\",progress_bar=False,log_output=True,stdout_file=sys.stdout,stderr_file=sys.stderr,allow_errors=False,timeout=43200)\n"}
+,{"stream_name":"stderr","time":61.653391458,"data":"                                      ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":61.653396193,"data":"  File \"/usr/local/lib/python3.13/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":61.653400134,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":61.65340398,"data":"    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":61.653407546,"data":"  File \"/usr/local/lib/python3.13/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":61.653411188,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":61.65341451,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":61.653470422,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":61.65347396,"data":"Exception encountered at \"In [1]\":\n"}
+,{"stream_name":"stderr","time":61.653476803,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":61.65347951,"data":"CalledProcessError                        Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":61.653482315,"data":"/tmp/ipykernel_16/1606446525.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":61.653490172,"data":"----\u003e 1 get_ipython().run_cell_magic('bash', '', '\\nset -uo pipefail\\nmkdir -p /tmp/work\\nLOG=/kaggle/working/BUILD-LOG.txt\\n: \u003e \"$LOG\"\\nlog(){ echo \"== $* ==\" | tee -a \"$LOG\"; }\\n\\n# --- deps as the Geode docs \"Required C++ Tools -\u003e Linux\" describe ---\\nlog \"1. deps: clang clang-tools lld llvm cmake git\"\\nexport DEBIAN_FRONTEND=noninteractive\\napt-get update -qq \u003e/dev/null 2\u003e\u00261 || echo \"apt update failed\" \u003e\u003e \"$LOG\"\\napt-get install -y -qq --no-install-recommends \\\\\\n    git cmake ninja-build clang clang-tools lld llvm libssl3 \\\\\\n    unzip xz-utils zip ca-certificates curl wget gpg \u003e/dev/null 2\u003e\u00261 \\\\\\n  || echo \"apt install partially failed\" \u003e\u003e \"$LOG\"\\n\\n# The docs note that some distros ship clang cmake that is too old: Geode\\n# needs Clang 19+ (21+ recommended) and CMake 3.29+, so pull both from the\\n# upstream repos when the default is too old.\\n. /etc/os-release\\nCODENAME=${VERSION_CODENAME:-noble}\\n\\nCLANG_VER=$(clang --version | grep -oP \\'version [0-9]+\\' | head -1 | grep -oP \\'[0-9]+\\')\\nif [ -z \"$CLANG_VER\" ] || [ \"$CLANG_VER\" -lt 19 ]; then\\n  log \"clang ${CLANG_VER:-none} \u003c 19 -\u003e apt.llvm.org llvm-toolchain-$CODENAME-19\"\\n  wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key 2\u003e/dev/null \\\\\\n    | gpg --dearmor -o /usr/share/keyrings/llvm.gpg || true\\n  echo \"deb [signed-by=/usr/share/keyrings/llvm.gpg] https://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME}-19 main\" \\\\\\n    \u003e /etc/apt/sources.list.d/llvm19.list\\n  apt-get update -qq \u003e/dev/null 2\u003e\u00261 || true\\n  apt-get install -y -qq --no-install-recommends clang-19 lld-19 llvm-19 \\\\\\n    \u003e/dev/null 2\u003e\u00261 || echo \"apt.llvm.org clang-19 failed\" \u003e\u003e \"$LOG\"\\n  export PATH=/usr/lib/llvm-19/bin:$PATH\\n  ln -sf /usr/lib/llvm-19/bin/* /usr/local/bin/ 2\u003e/dev/null || true\\n  hash -r\\nfi\\n\\nCMAKE_VER=$(cmake --version | head -1 | grep -oP \\'[0-9]+\\\\.[0-9]+\\' | head -1)\\nif [ -n \"$CMAKE_VER\" ] \u0026\u0026 awk \"BEGIN{exit !($CMAKE_VER \u003c 3.29)}\"; then\\n  log \"cmake $CMAKE_VER \u003c 3.29 -\u003e apt.kitware.com\"\\n  wget -qO- https://apt.kitware.com/keys/kitware-archive-latest.asc 2\u003e/dev/null \\\\\\n    | gpg --dearmor -o /usr/share/keyrings/kitware.gpg || true\\n  echo \"deb [signed-by=/usr/share/keyrings/kitware.gpg] https://apt.kitware.com/ubuntu ${CODENAME} main\" \\\\\\n    \u003e /etc/apt/sources.list.d/kitware.list\\n  apt-get update -qq \u003e/dev/null 2\u003e\u00261 || true\\n  apt-get install -y -qq cmake \u003e/dev/null 2\u003e\u00261 || true\\n  hash -r\\nfi\\n\\n{\\n  echo \"cmake : $(cmake --version | head -1)\"\\n  echo \"git   : $(git --version)\"\\n  echo \"ninja : $(ninja --version)\"\\n  echo \"clang : $(clang --version | head -1)\"\\n  for t in clang-cl lld-link llvm-lib llvm-nm llvm-mt llvm-rc; do\\n    if command -v $t \u003e/dev/null; then echo \"$t : OK\"; else echo \"$t : MISSING\"; fi\\n  done\\n} 2\u003e\u00261 | tee -a \"$LOG\"\\n\\ncommand -v clang-cl \u003e/dev/null || { echo \"FATAL clang-cl missing\" | tee -a \"$LOG\"; exit 2; }\\ncommand -v lld-link \u003e/dev/null || { echo \"FATAL lld-link missing\" | tee -a \"$LOG\"; exit 2; }\\nlog \"DEPS DONE\"\\n')\n"}
+,{"stream_name":"stderr","time":61.653516227,"data":"\n"}
+,{"stream_name":"stderr","time":61.653523078,"data":"/usr/local/lib/python3.13/dist-packages/IPython/core/interactiveshell.py in run_cell_magic(self, magic_name, line, cell)\n"}
+,{"stream_name":"stderr","time":61.653526158,"data":"   2471             with self.builtin_trap:\n"}
+,{"stream_name":"stderr","time":61.653528804,"data":"   2472                 args = (magic_arg_s, cell)\n"}
+,{"stream_name":"stderr","time":61.653531432,"data":"-\u003e 2473                 result = fn(*args, **kwargs)\n"}
+,{"stream_name":"stderr","time":61.653534161,"data":"   2474             return result\n"}
+,{"stream_name":"stderr","time":61.653536914,"data":"   2475 \n"}
+,{"stream_name":"stderr","time":61.653539511,"data":"\n"}
+,{"stream_name":"stderr","time":61.653542002,"data":"/usr/local/lib/python3.13/dist-packages/IPython/core/magics/script.py in named_script_magic(line, cell)\n"}
+,{"stream_name":"stderr","time":61.653544941,"data":"    140             else:\n"}
+,{"stream_name":"stderr","time":61.653547629,"data":"    141                 line = script\n"}
+,{"stream_name":"stderr","time":61.653550265,"data":"--\u003e 142             return self.shebang(line, cell)\n"}
+,{"stream_name":"stderr","time":61.653553094,"data":"    143 \n"}
+,{"stream_name":"stderr","time":61.65355561,"data":"    144         # write a basic docstring:\n"}
+,{"stream_name":"stderr","time":61.653558252,"data":"\n"}
+,{"stream_name":"stderr","time":61.653560769,"data":"/usr/local/lib/python3.13/dist-packages/decorator/__init__.py in fun(*args, **kw)\n"}
+,{"stream_name":"stderr","time":61.653563574,"data":"    245             if not kwsyntax:\n"}
+,{"stream_name":"stderr","time":61.653566152,"data":"    246                 args, kw = fix(args, kw, sig)\n"}
+,{"stream_name":"stderr","time":61.653568784,"data":"--\u003e 247             return caller(func, *(extras + args), **kw)\n"}
+,{"stream_name":"stderr","time":61.653571496,"data":"    248 \n"}
+,{"stream_name":"stderr","time":61.65357402,"data":"    249     fun.__doc__ = func.__doc__\n"}
+,{"stream_name":"stderr","time":61.653576757,"data":"\n"}
+,{"stream_name":"stderr","time":61.653579399,"data":"/usr/local/lib/python3.13/dist-packages/IPython/core/magic.py in \u003clambda\u003e(f, *a, **k)\n"}
+,{"stream_name":"stderr","time":61.653582288,"data":"    185     # but it's overkill for just that one bit of state.\n"}
+,{"stream_name":"stderr","time":61.653584939,"data":"    186     def magic_deco(arg):\n"}
+,{"stream_name":"stderr","time":61.653587553,"data":"--\u003e 187         call = lambda f, *a, **k: f(*a, **k)\n"}
+,{"stream_name":"stderr","time":61.653590261,"data":"    188 \n"}
+,{"stream_name":"stderr","time":61.65359389,"data":"    189         if callable(arg):\n"}
+,{"stream_name":"stderr","time":61.653596532,"data":"\n"}
+,{"stream_name":"stderr","time":61.653599039,"data":"/usr/local/lib/python3.13/dist-packages/IPython/core/magics/script.py in shebang(self, line, cell)\n"}
+,{"stream_name":"stderr","time":61.653601752,"data":"    243             sys.stderr.flush()\n"}
+,{"stream_name":"stderr","time":61.653604333,"data":"    244         if args.raise_error and p.returncode!=0:\n"}
+,{"stream_name":"stderr","time":61.653607012,"data":"--\u003e 245             raise CalledProcessError(p.returncode, cell, output=out, stderr=err)\n"}
+,{"stream_name":"stderr","time":61.653609755,"data":"    246 \n"}
+,{"stream_name":"stderr","time":61.65361229,"data":"    247     def _run_script(self, p, cell, to_close):\n"}
+,{"stream_name":"stderr","time":61.653614934,"data":"\n"}
+,{"stream_name":"stderr","time":61.653618634,"data":"CalledProcessError: Command 'b'\\nset -uo pipefail\\nmkdir -p /tmp/work\\nLOG=/kaggle/working/BUILD-LOG.txt\\n: \u003e \"$LOG\"\\nlog(){ echo \"== $* ==\" | tee -a \"$LOG\"; }\\n\\n# --- deps as the Geode docs \"Required C++ Tools -\u003e Linux\" describe ---\\nlog \"1. deps: clang clang-tools lld llvm cmake git\"\\nexport DEBIAN_FRONTEND=noninteractive\\napt-get update -qq \u003e/dev/null 2\u003e\u00261 || echo \"apt update failed\" \u003e\u003e \"$LOG\"\\napt-get install -y -qq --no-install-recommends \\\\\\n    git cmake ninja-build clang clang-tools lld llvm libssl3 \\\\\\n    unzip xz-utils zip ca-certificates curl wget gpg \u003e/dev/null 2\u003e\u00261 \\\\\\n  || echo \"apt install partially failed\" \u003e\u003e \"$LOG\"\\n\\n# The docs note that some distros ship clang cmake that is too old: Geode\\n# needs Clang 19+ (21+ recommended) and CMake 3.29+, so pull both from the\\n# upstream repos when the default is too old.\\n. /etc/os-release\\nCODENAME=${VERSION_CODENAME:-noble}\\n\\nCLANG_VER=$(clang --version | grep -oP \\'version [0-9]+\\' | head -1 | grep -oP \\'[0-9]+\\')\\nif [ -z \"$CLANG_VER\" ] || [ \"$CLANG_VER\" -lt 19 ]; then\\n  log \"clang ${CLANG_VER:-none} \u003c 19 -\u003e apt.llvm.org llvm-toolchain-$CODENAME-19\"\\n  wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key 2\u003e/dev/null \\\\\\n    | gpg --dearmor -o /usr/share/keyrings/llvm.gpg || true\\n  echo \"deb [signed-by=/usr/share/keyrings/llvm.gpg] https://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME}-19 main\" \\\\\\n    \u003e /etc/apt/sources.list.d/llvm19.list\\n  apt-get update -qq \u003e/dev/null 2\u003e\u00261 || true\\n  apt-get install -y -qq --no-install-recommends clang-19 lld-19 llvm-19 \\\\\\n    \u003e/dev/null 2\u003e\u00261 || echo \"apt.llvm.org clang-19 failed\" \u003e\u003e \"$LOG\"\\n  export PATH=/usr/lib/llvm-19/bin:$PATH\\n  ln -sf /usr/lib/llvm-19/bin/* /usr/local/bin/ 2\u003e/dev/null || true\\n  hash -r\\nfi\\n\\nCMAKE_VER=$(cmake --version | head -1 | grep -oP \\'[0-9]+\\\\.[0-9]+\\' | head -1)\\nif [ -n \"$CMAKE_VER\" ] \u0026\u0026 awk \"BEGIN{exit !($CMAKE_VER \u003c 3.29)}\"; then\\n  log \"cmake $CMAKE_VER \u003c 3.29 -\u003e apt.kitware.com\"\\n  wget -qO- https://apt.kitware.com/keys/kitware-archive-latest.asc 2\u003e/dev/null \\\\\\n    | gpg --dearmor -o /usr/share/keyrings/kitware.gpg || true\\n  echo \"deb [signed-by=/usr/share/keyrings/kitware.gpg] https://apt.kitware.com/ubuntu ${CODENAME} main\" \\\\\\n    \u003e /etc/apt/sources.list.d/kitware.list\\n  apt-get update -qq \u003e/dev/null 2\u003e\u00261 || true\\n  apt-get install -y -qq cmake \u003e/dev/null 2\u003e\u00261 || true\\n  hash -r\\nfi\\n\\n{\\n  echo \"cmake : $(cmake --version | head -1)\"\\n  echo \"git   : $(git --version)\"\\n  echo \"ninja : $(ninja --version)\"\\n  echo \"clang : $(clang --version | head -1)\"\\n  for t in clang-cl lld-link llvm-lib llvm-nm llvm-mt llvm-rc; do\\n    if command -v $t \u003e/dev/null; then echo \"$t : OK\"; else echo \"$t : MISSING\"; fi\\n  done\\n} 2\u003e\u00261 | tee -a \"$LOG\"\\n\\ncommand -v clang-cl \u003e/dev/null || { echo \"FATAL clang-cl missing\" | tee -a \"$LOG\"; exit 2; }\\ncommand -v lld-link \u003e/dev/null || { echo \"FATAL lld-link missing\" | tee -a \"$LOG\"; exit 2; }\\nlog \"DEPS DONE\"\\n'' returned non-zero exit status 2.\n"}
+,{"stream_name":"stderr","time":61.653640275,"data":"\n"}
+,{"stream_name":"stderr","time":64.957396444,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":64.957436658,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":65.163184149,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":65.163218607,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":66.133448062,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":66.238083622,"data":"[NbConvertApp] Writing 76433 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":69.739847518,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":70.490563573,"data":"[NbConvertApp] Writing 386578 bytes to __results__.html\n"}
+]

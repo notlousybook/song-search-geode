@@ -1,0 +1,209 @@
+[{"stream_name":"stderr","time":9.026899279,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.026972654,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.026982899,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.026986629,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":9.891940544,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.891979395,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.891984233,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.891987903,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":59.405644439,"data":"== 1. deps: clang clang-tools lld llvm cmake git ==\n"}
+,{"stream_name":"stdout","time":59.405677199,"data":"== clang 18 \u003c 19 -\u003e apt.llvm.org llvm-toolchain-noble-19 ==\n"}
+,{"stream_name":"stdout","time":59.4056848,"data":"cmake : cmake version 3.31.10\n"}
+,{"stream_name":"stdout","time":59.405690239,"data":"git   : git version 2.43.0\n"}
+,{"stream_name":"stdout","time":59.405695545,"data":"ninja : 1.13.2.git.kitware.jobserver-pipe-1\n"}
+,{"stream_name":"stdout","time":59.405701111,"data":"clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)\n"}
+,{"stream_name":"stdout","time":59.405707573,"data":"clang-cl : MISSING\n"}
+,{"stream_name":"stdout","time":59.405713237,"data":"lld-link : OK\n"}
+,{"stream_name":"stdout","time":59.405718996,"data":"llvm-lib : OK\n"}
+,{"stream_name":"stdout","time":59.405724848,"data":"llvm-nm : OK\n"}
+,{"stream_name":"stdout","time":59.405730262,"data":"llvm-mt : OK\n"}
+,{"stream_name":"stdout","time":59.405735934,"data":"llvm-rc : OK\n"}
+,{"stream_name":"stdout","time":59.405741034,"data":"== clang-cl absent -\u003e linking /usr/lib/llvm-19/bin/clang as clang-cl ==\n"}
+,{"stream_name":"stdout","time":59.405746799,"data":"clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)\n"}
+,{"stream_name":"stdout","time":59.405752537,"data":"clang-cl: Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)\n"}
+,{"stream_name":"stdout","time":59.405757947,"data":"clang-cl : OK\n"}
+,{"stream_name":"stdout","time":59.405763279,"data":"lld-link : OK\n"}
+,{"stream_name":"stdout","time":59.4057689,"data":"llvm-lib : OK\n"}
+,{"stream_name":"stdout","time":59.405774727,"data":"llvm-nm : OK\n"}
+,{"stream_name":"stdout","time":59.405780195,"data":"llvm-mt : OK\n"}
+,{"stream_name":"stdout","time":59.405786134,"data":"llvm-rc : OK\n"}
+,{"stream_name":"stdout","time":59.405792162,"data":"== DEPS DONE ==\n"}
+,{"stream_name":"stdout","time":261.106908797,"data":"== 2. xwin splat (MSVC CRT + Windows SDK) ==\n"}
+,{"stream_name":"stdout","time":261.106961363,"data":"xwin 0.10.0\n"}
+,{"stream_name":"stdout","time":261.106969753,"data":"== xwin splat OK on attempt 1 ==\n"}
+,{"stream_name":"stdout","time":261.10697602,"data":"xwin done=1\n"}
+,{"stream_name":"stdout","time":261.106981392,"data":"--- splat layout ---\n"}
+,{"stream_name":"stdout","time":261.106987111,"data":"630M\t/tmp/work/splat\n"}
+,{"stream_name":"stdout","time":261.106993265,"data":"  OK   crt/include\n"}
+,{"stream_name":"stdout","time":261.107009094,"data":"  OK   crt/lib/x86_64\n"}
+,{"stream_name":"stdout","time":261.107013974,"data":"  OK   sdk/include/ucrt\n"}
+,{"stream_name":"stdout","time":261.107018442,"data":"  OK   sdk/include/um\n"}
+,{"stream_name":"stdout","time":261.107022935,"data":"  OK   sdk/include/shared\n"}
+,{"stream_name":"stdout","time":261.107027431,"data":"  OK   sdk/include/winrt\n"}
+,{"stream_name":"stdout","time":261.107032596,"data":"  OK   sdk/lib/ucrt/x86_64\n"}
+,{"stream_name":"stdout","time":261.10703583,"data":"  OK   sdk/lib/um/x86_64\n"}
+,{"stream_name":"stdout","time":261.107038795,"data":"  Windows.h present\n"}
+,{"stream_name":"stdout","time":264.872732927,"data":"== 3. toolchain + Geode CLI + Geode SDK + bindings ==\n"}
+,{"stream_name":"stdout","time":264.872767307,"data":"clang-cl-msvc.cmake\n"}
+,{"stream_name":"stdout","time":264.872773193,"data":"clang-msvc.cmake\n"}
+,{"stream_name":"stdout","time":264.872778009,"data":"dumpbin\n"}
+,{"stream_name":"stdout","time":264.872782963,"data":"example\n"}
+,{"stream_name":"stdout","time":264.872786353,"data":"LICENSE\n"}
+,{"stream_name":"stdout","time":264.872789283,"data":"llvm-mt-wrapper\n"}
+,{"stream_name":"stdout","time":264.872792237,"data":"llvm-rc-wrapper\n"}
+,{"stream_name":"stdout","time":264.872795037,"data":"msvc\n"}
+,{"stream_name":"stdout","time":264.872798057,"data":"powershell\n"}
+,{"stream_name":"stdout","time":264.872801282,"data":"README.md\n"}
+,{"stream_name":"stdout","time":264.872804122,"data":"winsdk\n"}
+,{"stream_name":"stdout","time":264.872806922,"data":"geode 3.9.0\n"}
+,{"stream_name":"stdout","time":264.872820838,"data":"fmod.lib\n"}
+,{"stream_name":"stdout","time":264.872823879,"data":"gd-libcurl.lib\n"}
+,{"stream_name":"stdout","time":264.872826781,"data":"glew32.lib\n"}
+,{"stream_name":"stdout","time":264.872829688,"data":"libcocos2d.lib\n"}
+,{"stream_name":"stdout","time":264.872832593,"data":"libExtensions.lib\n"}
+,{"stream_name":"stdout","time":264.872835475,"data":"Cocos2d.bro\n"}
+,{"stream_name":"stdout","time":264.872838258,"data":"Entry.bro\n"}
+,{"stream_name":"stdout","time":264.872841125,"data":"Extras.bro\n"}
+,{"stream_name":"stdout","time":264.872844089,"data":"FMOD.bro\n"}
+,{"stream_name":"stdout","time":264.872846957,"data":"GeometryDash.bro\n"}
+,{"stream_name":"stdout","time":264.872849901,"data":"inline\n"}
+,{"stream_name":"stdout","time":264.872854136,"data":"Kazmath.bro\n"}
+,{"stream_name":"stdout","time":264.872858723,"data":"== TOOLCHAIN DONE ==\n"}
+,{"stream_name":"stderr","time":264.874166879,"data":"| Fail | Unable to get SDK path: Unable to find Geode SDK (GEODE_SDK isn't set). Please install it using `geode sdk install` or use `geode sdk set-path` to set it to an existing clone. If you just installed the SDK using `geode sdk install`, please restart your terminal / computer to apply changes.\n"}
+,{"stream_name":"stderr","time":264.874408213,"data":"\n"}
+,{"stream_name":"stderr","time":264.874418038,"data":"| Fail | Unable to get SDK path: Unable to find Geode SDK (GEODE_SDK isn't set). Please install it using `geode sdk install` or use `geode sdk set-path` to set it to an existing clone. If you just installed the SDK using `geode sdk install`, please restart your terminal / computer to apply changes.\n"}
+,{"stream_name":"stdout","time":264.905817177,"data":"wrote /kaggle/working/song-search/mod.json 373 bytes\n"}
+,{"stream_name":"stdout","time":264.905850234,"data":"wrote /kaggle/working/song-search/CMakeLists.txt 720 bytes\n"}
+,{"stream_name":"stdout","time":264.905856304,"data":"wrote /kaggle/working/song-search/.gitignore 23 bytes\n"}
+,{"stream_name":"stdout","time":264.905877331,"data":"wrote /kaggle/working/song-search/src/main.cpp 17892 bytes\n"}
+,{"stream_name":"stdout","time":264.905883149,"data":"wrote /kaggle/working/song-search/src/fts_fuzzy_match.h 8377 bytes\n"}
+,{"stream_name":"stdout","time":264.90588853,"data":"wrote /kaggle/working/song-search/tests/logic_test.cpp 3171 bytes\n"}
+,{"stream_name":"stdout","time":267.56469342,"data":"== 4. mod source + native logic test ==\n"}
+,{"stream_name":"stdout","time":267.564726595,"data":"./CMakeLists.txt\n"}
+,{"stream_name":"stdout","time":267.56473216,"data":"./.gitignore\n"}
+,{"stream_name":"stdout","time":267.564736781,"data":"./mod.json\n"}
+,{"stream_name":"stdout","time":267.564741161,"data":"./src/fts_fuzzy_match.h\n"}
+,{"stream_name":"stdout","time":267.564745767,"data":"./src/main.cpp\n"}
+,{"stream_name":"stdout","time":267.564750297,"data":"./tests/logic_test.cpp\n"}
+,{"stream_name":"stdout","time":267.564754957,"data":"ALL LOGIC TESTS PASSED\n"}
+,{"stream_name":"stdout","time":267.564759734,"data":"== logic test rc=0 ==\n"}
+,{"stream_name":"stderr","time":267.565801632,"data":"In file included from tests/logic_test.cpp:5:\n"}
+,{"stream_name":"stderr","time":267.565824197,"data":"src/fts_fuzzy_match.h:56:17: warning: ‘bool fts::fuzzy_match_simple(const char*, const char*)’ defined but not used [-Wunused-function]\n"}
+,{"stream_name":"stderr","time":267.56583108,"data":"   56 |     static bool fuzzy_match_simple(char const * pattern, char const * str) {\n"}
+,{"stream_name":"stderr","time":267.56583559,"data":"      |                 ^~~~~~~~~~~~~~~~~~\n"}
+,{"stream_name":"stderr","time":267.565840034,"data":"\n"}
+,{"stream_name":"stderr","time":267.565844148,"data":"In file included from tests/logic_test.cpp:5:\n"}
+,{"stream_name":"stderr","time":267.565848751,"data":"src/fts_fuzzy_match.h:56:17: warning: ‘bool fts::fuzzy_match_simple(const char*, const char*)’ defined but not used [-Wunused-function]\n"}
+,{"stream_name":"stderr","time":267.565853941,"data":"   56 |     static bool fuzzy_match_simple(char const * pattern, char const * str) {\n"}
+,{"stream_name":"stderr","time":267.56585885,"data":"      |                 ^~~~~~~~~~~~~~~~~~\n"}
+,{"stream_name":"stdout","time":274.387674355,"data":"== 5. configure (cross-compile -\u003e Win64) ==\n"}
+,{"stream_name":"stdout","time":274.38770295,"data":"-- Found SPLAT_DIR: /tmp/work/splat\n"}
+,{"stream_name":"stdout","time":274.387706989,"data":"-- Found HOST_ARCH: x86_64\n"}
+,{"stream_name":"stdout","time":274.387710234,"data":"-- \"LLVM_VER\" not set, leaving blank\n"}
+,{"stream_name":"stdout","time":274.387713606,"data":"-- \"CLANG_VER\" not set, leaving blank\n"}
+,{"stream_name":"stdout","time":274.387716787,"data":"-- \"LLVM_PATH\" not set, leaving blank\n"}
+,{"stream_name":"stdout","time":274.387719837,"data":"-- Generating library symlinks to /kaggle/working/song-search/build/winsdk_lib_symlinks\n"}
+,{"stream_name":"stdout","time":274.387723227,"data":"-- \"LLVM_VER\" not set, leaving blank\n"}
+,{"stream_name":"stdout","time":274.387726251,"data":"-- \"CLANG_VER\" not set, leaving blank\n"}
+,{"stream_name":"stdout","time":274.387729534,"data":"-- \"LLVM_PATH\" not set, leaving blank\n"}
+,{"stream_name":"stdout","time":274.38773247,"data":"-- Using existing symlinks, skipping generation\n"}
+,{"stream_name":"stdout","time":274.387735477,"data":"-- The C compiler identification is Clang 19.1.7 with MSVC-like command-line\n"}
+,{"stream_name":"stdout","time":274.387738638,"data":"-- The CXX compiler identification is Clang 19.1.7 with MSVC-like command-line\n"}
+,{"stream_name":"stdout","time":274.387741689,"data":"-- Detecting C compiler ABI info\n"}
+,{"stream_name":"stdout","time":274.3877539,"data":"-- Detecting C compiler ABI info - failed\n"}
+,{"stream_name":"stdout","time":274.387757155,"data":"-- Check for working C compiler: /usr/local/bin/clang-cl\n"}
+,{"stream_name":"stdout","time":274.387760272,"data":"-- Check for working C compiler: /usr/local/bin/clang-cl - broken\n"}
+,{"stream_name":"stdout","time":274.387763455,"data":"CMake Error at /usr/local/lib/python3.13/dist-packages/cmake/data/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:67 (message):\n"}
+,{"stream_name":"stdout","time":274.387766629,"data":"  The C compiler\n"}
+,{"stream_name":"stdout","time":274.387769615,"data":"\n"}
+,{"stream_name":"stdout","time":274.387772564,"data":"    \"/usr/local/bin/clang-cl\"\n"}
+,{"stream_name":"stdout","time":274.387775669,"data":"\n"}
+,{"stream_name":"stdout","time":274.387778449,"data":"  is not able to compile a simple test program.\n"}
+,{"stream_name":"stdout","time":274.387781425,"data":"\n"}
+,{"stream_name":"stdout","time":274.387784193,"data":"  It fails with the following output:\n"}
+,{"stream_name":"stdout","time":274.387787069,"data":"\n"}
+,{"stream_name":"stdout","time":274.387789884,"data":"    Change Dir: '/kaggle/working/song-search/build/CMakeFiles/CMakeScratch/TryCompile-GOaVT3'\n"}
+,{"stream_name":"stdout","time":274.387793048,"data":"    \n"}
+,{"stream_name":"stdout","time":274.387795925,"data":"    Run Build Command(s): /usr/local/bin/ninja -v cmTC_6bfff\n"}
+,{"stream_name":"stdout","time":274.387803903,"data":"    [1/2] /usr/local/bin/clang-cl  /nologo   -Xclang -fexceptions -Xclang -fcxx-exceptions -Xclang -D_CRT_SECURE_NO_WARNINGS --target=x86_64-windows-msvc -fms-compatibility-version=19.37 -Wno-unused-command-line-argument -imsvc /tmp/work/splat/crt/include -imsvc /tmp/work/splat/sdk/include/ucrt -imsvc /tmp/work/splat/sdk/include/shared -imsvc /tmp/work/splat/sdk/include/um -imsvc /tmp/work/splat/sdk/include/winrt -Xclang -ivfsoverlay -Xclang /kaggle/working/song-search/build/winsdk_vfs_overlay.yaml  /Zi /Ob0 /Od /RTC1 -Xclang -ivfsoverlay -Xclang /kaggle/working/song-search/build/winsdk_vfs_overlay.yaml -MDd /showIncludes /FoCMakeFiles/cmTC_6bfff.dir/testCCompiler.c.obj /FdCMakeFiles/cmTC_6bfff.dir/ -c -- /kaggle/working/song-search/build/CMakeFiles/CMakeScratch/TryCompile-GOaVT3/testCCompiler.c\n"}
+,{"stream_name":"stdout","time":274.387810609,"data":"    [2/2] : \u0026\u0026 /usr/local/lib/python3.13/dist-packages/cmake/data/bin/cmake -E vs_link_exe --msvc-ver=1937 --intdir=CMakeFiles/cmTC_6bfff.dir --rc=/usr/local/bin/llvm-rc --mt=/usr/local/bin/llvm-mt --manifests  -- /usr/local/bin/lld-link /nologo CMakeFiles/cmTC_6bfff.dir/testCCompiler.c.obj  /out:cmTC_6bfff.exe /implib:cmTC_6bfff.lib /pdb:cmTC_6bfff.pdb /version:0.0 -libpath:\"/tmp/work/splat/crt/lib/x86_64\" -libpath:\"/tmp/work/splat/sdk/lib/ucrt/x86_64\" -libpath:\"/tmp/work/splat/sdk/lib/um/x86_64\" -libpath:\"/kaggle/working/song-search/build/winsdk_lib_symlinks\"  /debug /INCREMENTAL /subsystem:console  user32.lib  kernel32.lib  shell32.lib  ole32.lib  crypt32.lib  advapi32.lib  delayimp.lib  gdi32.lib \u0026\u0026 :\n"}
+,{"stream_name":"stdout","time":274.387816244,"data":"    FAILED: [code=255] cmTC_6bfff.exe \n"}
+,{"stream_name":"stdout","time":274.387819434,"data":"    : \u0026\u0026 /usr/local/lib/python3.13/dist-packages/cmake/data/bin/cmake -E vs_link_exe --msvc-ver=1937 --intdir=CMakeFiles/cmTC_6bfff.dir --rc=/usr/local/bin/llvm-rc --mt=/usr/local/bin/llvm-mt --manifests  -- /usr/local/bin/lld-link /nologo CMakeFiles/cmTC_6bfff.dir/testCCompiler.c.obj  /out:cmTC_6bfff.exe /implib:cmTC_6bfff.lib /pdb:cmTC_6bfff.pdb /version:0.0 -libpath:\"/tmp/work/splat/crt/lib/x86_64\" -libpath:\"/tmp/work/splat/sdk/lib/ucrt/x86_64\" -libpath:\"/tmp/work/splat/sdk/lib/um/x86_64\" -libpath:\"/kaggle/working/song-search/build/winsdk_lib_symlinks\"  /debug /INCREMENTAL /subsystem:console  user32.lib  kernel32.lib  shell32.lib  ole32.lib  crypt32.lib  advapi32.lib  delayimp.lib  gdi32.lib \u0026\u0026 :\n"}
+,{"stream_name":"stdout","time":274.3878279,"data":"    LINK Pass 1: command \"/usr/local/bin/lld-link /nologo CMakeFiles/cmTC_6bfff.dir/testCCompiler.c.obj /out:cmTC_6bfff.exe /implib:cmTC_6bfff.lib /pdb:cmTC_6bfff.pdb /version:0.0 -libpath:/tmp/work/splat/crt/lib/x86_64 -libpath:/tmp/work/splat/sdk/lib/ucrt/x86_64 -libpath:/tmp/work/splat/sdk/lib/um/x86_64 -libpath:/kaggle/working/song-search/build/winsdk_lib_symlinks /debug /INCREMENTAL /subsystem:console user32.lib kernel32.lib shell32.lib ole32.lib crypt32.lib advapi32.lib delayimp.lib gdi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles/cmTC_6bfff.dir/intermediate.manifest CMakeFiles/cmTC_6bfff.dir/manifest.res\" failed (exit code 1) with the following output:\n"}
+,{"stream_name":"stdout","time":274.38783331,"data":"    lld-link: error: could not open 'msvcrtd.lib': No such file or directory\n"}
+,{"stream_name":"stdout","time":274.387836488,"data":"    ninja: build stopped: subcommand failed.\n"}
+,{"stream_name":"stdout","time":274.387839445,"data":"    \n"}
+,{"stream_name":"stdout","time":274.387842247,"data":"    \n"}
+,{"stream_name":"stdout","time":274.3878453,"data":"\n"}
+,{"stream_name":"stdout","time":274.387848155,"data":"  \n"}
+,{"stream_name":"stdout","time":274.387850982,"data":"\n"}
+,{"stream_name":"stdout","time":274.387853774,"data":"  CMake will not be able to correctly generate this project.\n"}
+,{"stream_name":"stdout","time":274.387856912,"data":"Call Stack (most recent call first):\n"}
+,{"stream_name":"stdout","time":274.387859867,"data":"  CMakeLists.txt:6 (project)\n"}
+,{"stream_name":"stdout","time":274.387862813,"data":"\n"}
+,{"stream_name":"stdout","time":274.387865594,"data":"\n"}
+,{"stream_name":"stdout","time":274.387868519,"data":"-- Configuring incomplete, errors occurred!\n"}
+,{"stream_name":"stdout","time":274.38787156,"data":"configure rc=1\n"}
+,{"stream_name":"stderr","time":274.836583014,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":274.837367842,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":274.837388759,"data":"    import sys;import papermill as pm;pm.execute_notebook(\"__notebook__.ipynb\",\"__notebook__.ipynb\",progress_bar=False,log_output=True,stdout_file=sys.stdout,stderr_file=sys.stderr,allow_errors=False,timeout=43200)\n"}
+,{"stream_name":"stderr","time":274.83739655,"data":"                                      ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":274.837402246,"data":"  File \"/usr/local/lib/python3.13/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":274.837407398,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":274.837411918,"data":"    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":274.837416296,"data":"  File \"/usr/local/lib/python3.13/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":274.837421246,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":274.837425357,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":274.837429434,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":274.837434331,"data":"Exception encountered at \"In [6]\":\n"}
+,{"stream_name":"stderr","time":274.837450668,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":274.83745538,"data":"CalledProcessError                        Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":274.837459972,"data":"/tmp/ipykernel_16/2441349567.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":274.837468011,"data":"----\u003e 1 get_ipython().run_cell_magic('bash', '', '\\nset -uo pipefail\\nLOG=/kaggle/working/BUILD-LOG.txt\\nlog(){ echo \"== $* ==\" | tee -a \"$LOG\"; }\\nlog \"5. configure (cross-compile -\u003e Win64)\"\\ncd /kaggle/working/song-search || exit 11\\nexport PATH=/usr/local/bin:/tmp/work/geode-cli:/tmp/work/xwin:$PATH\\nexport SPLAT_DIR=/tmp/work/splat\\nexport TOOLCHAIN=/tmp/work/toolchain/clang-cl-msvc.cmake\\nexport HOST_ARCH=x86_64\\nexport GEODE_SDK=/tmp/work/sdk\\nexport GEODE_BINDINGS_REPO_PATH=/tmp/work/bindings\\n\\nrm -rf build\\ncmake \\\\\\n  -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN \\\\\\n  -DCMAKE_BUILD_TYPE=Release \\\\\\n  -DGEODE_TARGET_PLATFORM=Win64 \\\\\\n  -G Ninja \\\\\\n  -B build \u003e /tmp/work/configure.log 2\u003e\u00261\\nRC=$?\\ntail -50 /tmp/work/configure.log | tee -a \"$LOG\"\\necho \"configure rc=$RC\" | tee -a \"$LOG\"\\n[ $RC -eq 0 ] || exit 12\\n')\n"}
+,{"stream_name":"stderr","time":274.837488906,"data":"\n"}
+,{"stream_name":"stderr","time":274.837495095,"data":"/usr/local/lib/python3.13/dist-packages/IPython/core/interactiveshell.py in run_cell_magic(self, magic_name, line, cell)\n"}
+,{"stream_name":"stderr","time":274.837500704,"data":"   2471             with self.builtin_trap:\n"}
+,{"stream_name":"stderr","time":274.83750532,"data":"   2472                 args = (magic_arg_s, cell)\n"}
+,{"stream_name":"stderr","time":274.837510095,"data":"-\u003e 2473                 result = fn(*args, **kwargs)\n"}
+,{"stream_name":"stderr","time":274.837514859,"data":"   2474             return result\n"}
+,{"stream_name":"stderr","time":274.837519186,"data":"   2475 \n"}
+,{"stream_name":"stderr","time":274.837523885,"data":"\n"}
+,{"stream_name":"stderr","time":274.83752806,"data":"/usr/local/lib/python3.13/dist-packages/IPython/core/magics/script.py in named_script_magic(line, cell)\n"}
+,{"stream_name":"stderr","time":274.83753283,"data":"    140             else:\n"}
+,{"stream_name":"stderr","time":274.837537613,"data":"    141                 line = script\n"}
+,{"stream_name":"stderr","time":274.837542076,"data":"--\u003e 142             return self.shebang(line, cell)\n"}
+,{"stream_name":"stderr","time":274.837546757,"data":"    143 \n"}
+,{"stream_name":"stderr","time":274.837551071,"data":"    144         # write a basic docstring:\n"}
+,{"stream_name":"stderr","time":274.83755591,"data":"\n"}
+,{"stream_name":"stderr","time":274.837560356,"data":"/usr/local/lib/python3.13/dist-packages/decorator/__init__.py in fun(*args, **kw)\n"}
+,{"stream_name":"stderr","time":274.837565303,"data":"    245             if not kwsyntax:\n"}
+,{"stream_name":"stderr","time":274.837570258,"data":"    246                 args, kw = fix(args, kw, sig)\n"}
+,{"stream_name":"stderr","time":274.837575064,"data":"--\u003e 247             return caller(func, *(extras + args), **kw)\n"}
+,{"stream_name":"stderr","time":274.83757996,"data":"    248 \n"}
+,{"stream_name":"stderr","time":274.83758443,"data":"    249     fun.__doc__ = func.__doc__\n"}
+,{"stream_name":"stderr","time":274.837589268,"data":"\n"}
+,{"stream_name":"stderr","time":274.837594506,"data":"/usr/local/lib/python3.13/dist-packages/IPython/core/magic.py in \u003clambda\u003e(f, *a, **k)\n"}
+,{"stream_name":"stderr","time":274.837600139,"data":"    185     # but it's overkill for just that one bit of state.\n"}
+,{"stream_name":"stderr","time":274.837610115,"data":"    186     def magic_deco(arg):\n"}
+,{"stream_name":"stderr","time":274.837614633,"data":"--\u003e 187         call = lambda f, *a, **k: f(*a, **k)\n"}
+,{"stream_name":"stderr","time":274.83761971,"data":"    188 \n"}
+,{"stream_name":"stderr","time":274.83762462,"data":"    189         if callable(arg):\n"}
+,{"stream_name":"stderr","time":274.83762999,"data":"\n"}
+,{"stream_name":"stderr","time":274.837635076,"data":"/usr/local/lib/python3.13/dist-packages/IPython/core/magics/script.py in shebang(self, line, cell)\n"}
+,{"stream_name":"stderr","time":274.83764052,"data":"    243             sys.stderr.flush()\n"}
+,{"stream_name":"stderr","time":274.837645286,"data":"    244         if args.raise_error and p.returncode!=0:\n"}
+,{"stream_name":"stderr","time":274.83765016,"data":"--\u003e 245             raise CalledProcessError(p.returncode, cell, output=out, stderr=err)\n"}
+,{"stream_name":"stderr","time":274.837655268,"data":"    246 \n"}
+,{"stream_name":"stderr","time":274.837660153,"data":"    247     def _run_script(self, p, cell, to_close):\n"}
+,{"stream_name":"stderr","time":274.837665035,"data":"\n"}
+,{"stream_name":"stderr","time":274.837671076,"data":"CalledProcessError: Command 'b'\\nset -uo pipefail\\nLOG=/kaggle/working/BUILD-LOG.txt\\nlog(){ echo \"== $* ==\" | tee -a \"$LOG\"; }\\nlog \"5. configure (cross-compile -\u003e Win64)\"\\ncd /kaggle/working/song-search || exit 11\\nexport PATH=/usr/local/bin:/tmp/work/geode-cli:/tmp/work/xwin:$PATH\\nexport SPLAT_DIR=/tmp/work/splat\\nexport TOOLCHAIN=/tmp/work/toolchain/clang-cl-msvc.cmake\\nexport HOST_ARCH=x86_64\\nexport GEODE_SDK=/tmp/work/sdk\\nexport GEODE_BINDINGS_REPO_PATH=/tmp/work/bindings\\n\\nrm -rf build\\ncmake \\\\\\n  -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN \\\\\\n  -DCMAKE_BUILD_TYPE=Release \\\\\\n  -DGEODE_TARGET_PLATFORM=Win64 \\\\\\n  -G Ninja \\\\\\n  -B build \u003e /tmp/work/configure.log 2\u003e\u00261\\nRC=$?\\ntail -50 /tmp/work/configure.log | tee -a \"$LOG\"\\necho \"configure rc=$RC\" | tee -a \"$LOG\"\\n[ $RC -eq 0 ] || exit 12\\n'' returned non-zero exit status 12.\n"}
+,{"stream_name":"stderr","time":274.837682301,"data":"\n"}
+,{"stream_name":"stderr","time":277.922076299,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":277.922114119,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":278.146004432,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":278.146037527,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":279.131011603,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":279.237464422,"data":"[NbConvertApp] Writing 81052 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":282.780204199,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":283.493016308,"data":"[NbConvertApp] Writing 394514 bytes to __results__.html\n"}
+]

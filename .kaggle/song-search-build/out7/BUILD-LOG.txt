@@ -1,0 +1,124 @@
+== 1. deps: clang clang-tools lld llvm cmake git ==
+== clang 18 < 19 -> apt.llvm.org llvm-toolchain-noble-19 ==
+cmake : cmake version 3.31.10
+git   : git version 2.43.0
+ninja : 1.13.2.git.kitware.jobserver-pipe-1
+clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl : MISSING
+lld-link : OK
+llvm-lib : OK
+llvm-nm : OK
+llvm-mt : OK
+llvm-rc : OK
+== clang-cl absent -> linking /usr/lib/llvm-19/bin/clang as clang-cl ==
+clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl: Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl : OK
+lld-link : OK
+llvm-lib : OK
+llvm-nm : OK
+llvm-mt : OK
+llvm-rc : OK
+== DEPS DONE ==
+== 2. xwin splat (MSVC CRT + Windows SDK) ==
+xwin 0.10.0
+--- xwin splat attempt 1/60 ---
+== xwin splat OK on attempt 1 ==
+xwin done=1
+--- splat layout ---
+  OK   crt/include
+  OK   crt/lib/x86_64
+  OK   sdk/include/ucrt
+  OK   sdk/include/um
+  OK   sdk/include/shared
+  OK   sdk/include/winrt
+  OK   sdk/lib/ucrt/x86_64
+  OK   sdk/lib/um/x86_64
+  Windows.h present
+== 3. toolchain + Geode CLI + Geode SDK + bindings ==
+Cloning into 'toolchain'...
+clang-cl-msvc.cmake
+clang-msvc.cmake
+dumpbin
+example
+LICENSE
+llvm-mt-wrapper
+llvm-rc-wrapper
+msvc
+powershell
+README.md
+winsdk
+geode 3.9.0
+Cloning into 'sdk'...
+| Done | Successfully set SDK path to /tmp/work/sdk
+fmod.lib
+gd-libcurl.lib
+glew32.lib
+libcocos2d.lib
+libExtensions.lib
+Cloning into 'bindings'...
+Cocos2d.bro
+Entry.bro
+Extras.bro
+FMOD.bro
+GeometryDash.bro
+inline
+Kazmath.bro
+== TOOLCHAIN DONE ==
+== 4. mod source + native logic test ==
+./CMakeLists.txt
+./.gitignore
+./mod.json
+./src/fts_fuzzy_match.h
+./src/main.cpp
+./tests/logic_test.cpp
+ALL LOGIC TESTS PASSED
+== logic test rc=0 ==
+== 5. configure (cross-compile -> Win64) ==
+-- Found SPLAT_DIR: /tmp/work/splat
+-- Found HOST_ARCH: x86_64
+-- "LLVM_VER" not set, leaving blank
+-- "CLANG_VER" not set, leaving blank
+-- "LLVM_PATH" not set, leaving blank
+-- Generating library symlinks to /kaggle/working/song-search/build/winsdk_lib_symlinks
+-- "LLVM_VER" not set, leaving blank
+-- "CLANG_VER" not set, leaving blank
+-- "LLVM_PATH" not set, leaving blank
+-- Using existing symlinks, skipping generation
+-- The C compiler identification is Clang 19.1.7 with MSVC-like command-line
+-- The CXX compiler identification is Clang 19.1.7 with MSVC-like command-line
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - failed
+-- Check for working C compiler: /usr/local/bin/clang-cl
+-- Check for working C compiler: /usr/local/bin/clang-cl - broken
+CMake Error at /usr/local/lib/python3.13/dist-packages/cmake/data/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:67 (message):
+  The C compiler
+
+    "/usr/local/bin/clang-cl"
+
+  is not able to compile a simple test program.
+
+  It fails with the following output:
+
+    Change Dir: '/kaggle/working/song-search/build/CMakeFiles/CMakeScratch/TryCompile-GOaVT3'
+    
+    Run Build Command(s): /usr/local/bin/ninja -v cmTC_6bfff
+    [1/2] /usr/local/bin/clang-cl  /nologo   -Xclang -fexceptions -Xclang -fcxx-exceptions -Xclang -D_CRT_SECURE_NO_WARNINGS --target=x86_64-windows-msvc -fms-compatibility-version=19.37 -Wno-unused-command-line-argument -imsvc /tmp/work/splat/crt/include -imsvc /tmp/work/splat/sdk/include/ucrt -imsvc /tmp/work/splat/sdk/include/shared -imsvc /tmp/work/splat/sdk/include/um -imsvc /tmp/work/splat/sdk/include/winrt -Xclang -ivfsoverlay -Xclang /kaggle/working/song-search/build/winsdk_vfs_overlay.yaml  /Zi /Ob0 /Od /RTC1 -Xclang -ivfsoverlay -Xclang /kaggle/working/song-search/build/winsdk_vfs_overlay.yaml -MDd /showIncludes /FoCMakeFiles/cmTC_6bfff.dir/testCCompiler.c.obj /FdCMakeFiles/cmTC_6bfff.dir/ -c -- /kaggle/working/song-search/build/CMakeFiles/CMakeScratch/TryCompile-GOaVT3/testCCompiler.c
+    [2/2] : && /usr/local/lib/python3.13/dist-packages/cmake/data/bin/cmake -E vs_link_exe --msvc-ver=1937 --intdir=CMakeFiles/cmTC_6bfff.dir --rc=/usr/local/bin/llvm-rc --mt=/usr/local/bin/llvm-mt --manifests  -- /usr/local/bin/lld-link /nologo CMakeFiles/cmTC_6bfff.dir/testCCompiler.c.obj  /out:cmTC_6bfff.exe /implib:cmTC_6bfff.lib /pdb:cmTC_6bfff.pdb /version:0.0 -libpath:"/tmp/work/splat/crt/lib/x86_64" -libpath:"/tmp/work/splat/sdk/lib/ucrt/x86_64" -libpath:"/tmp/work/splat/sdk/lib/um/x86_64" -libpath:"/kaggle/working/song-search/build/winsdk_lib_symlinks"  /debug /INCREMENTAL /subsystem:console  user32.lib  kernel32.lib  shell32.lib  ole32.lib  crypt32.lib  advapi32.lib  delayimp.lib  gdi32.lib && :
+    FAILED: [code=255] cmTC_6bfff.exe 
+    : && /usr/local/lib/python3.13/dist-packages/cmake/data/bin/cmake -E vs_link_exe --msvc-ver=1937 --intdir=CMakeFiles/cmTC_6bfff.dir --rc=/usr/local/bin/llvm-rc --mt=/usr/local/bin/llvm-mt --manifests  -- /usr/local/bin/lld-link /nologo CMakeFiles/cmTC_6bfff.dir/testCCompiler.c.obj  /out:cmTC_6bfff.exe /implib:cmTC_6bfff.lib /pdb:cmTC_6bfff.pdb /version:0.0 -libpath:"/tmp/work/splat/crt/lib/x86_64" -libpath:"/tmp/work/splat/sdk/lib/ucrt/x86_64" -libpath:"/tmp/work/splat/sdk/lib/um/x86_64" -libpath:"/kaggle/working/song-search/build/winsdk_lib_symlinks"  /debug /INCREMENTAL /subsystem:console  user32.lib  kernel32.lib  shell32.lib  ole32.lib  crypt32.lib  advapi32.lib  delayimp.lib  gdi32.lib && :
+    LINK Pass 1: command "/usr/local/bin/lld-link /nologo CMakeFiles/cmTC_6bfff.dir/testCCompiler.c.obj /out:cmTC_6bfff.exe /implib:cmTC_6bfff.lib /pdb:cmTC_6bfff.pdb /version:0.0 -libpath:/tmp/work/splat/crt/lib/x86_64 -libpath:/tmp/work/splat/sdk/lib/ucrt/x86_64 -libpath:/tmp/work/splat/sdk/lib/um/x86_64 -libpath:/kaggle/working/song-search/build/winsdk_lib_symlinks /debug /INCREMENTAL /subsystem:console user32.lib kernel32.lib shell32.lib ole32.lib crypt32.lib advapi32.lib delayimp.lib gdi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles/cmTC_6bfff.dir/intermediate.manifest CMakeFiles/cmTC_6bfff.dir/manifest.res" failed (exit code 1) with the following output:
+    lld-link: error: could not open 'msvcrtd.lib': No such file or directory
+    ninja: build stopped: subcommand failed.
+    
+    
+
+  
+
+  CMake will not be able to correctly generate this project.
+Call Stack (most recent call first):
+  CMakeLists.txt:6 (project)
+
+
+-- Configuring incomplete, errors occurred!
+configure rc=1

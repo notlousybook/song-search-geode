@@ -1,0 +1,75 @@
+== 1. deps: clang clang-tools lld llvm cmake git ==
+== clang 18 < 19 -> apt.llvm.org llvm-toolchain-noble-19 ==
+cmake : cmake version 3.31.10
+git   : git version 2.43.0
+ninja : 1.13.2.git.kitware.jobserver-pipe-1
+clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl : MISSING
+lld-link : OK
+llvm-lib : OK
+llvm-nm : OK
+llvm-mt : OK
+llvm-rc : OK
+== clang-cl absent -> linking /usr/lib/llvm-19/bin/clang as clang-cl ==
+clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl: Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl : OK
+lld-link : OK
+llvm-lib : OK
+llvm-nm : OK
+llvm-mt : OK
+llvm-rc : OK
+== DEPS DONE ==
+== 2. xwin splat (MSVC CRT + Windows SDK) ==
+xwin 0.10.0
+--- xwin splat attempt 1/60 ---
+== xwin splat OK on attempt 1 ==
+xwin done=1
+--- splat layout ---
+  OK   crt/include
+  OK   crt/lib/x86_64
+  OK   sdk/include/ucrt
+  OK   sdk/include/um
+  OK   sdk/include/shared
+  OK   sdk/include/winrt
+  OK   sdk/lib/ucrt/x86_64
+  OK   sdk/lib/um/x86_64
+  Windows.h present
+== 3. toolchain + Geode CLI + Geode SDK + bindings ==
+Cloning into 'toolchain'...
+clang-cl-msvc.cmake
+clang-msvc.cmake
+dumpbin
+example
+LICENSE
+llvm-mt-wrapper
+llvm-rc-wrapper
+msvc
+powershell
+README.md
+winsdk
+geode 3.9.0
+Cloning into 'sdk'...
+| Done | Successfully set SDK path to /tmp/work/sdk
+fmod.lib
+gd-libcurl.lib
+glew32.lib
+libcocos2d.lib
+libExtensions.lib
+sdk version: 5.11.1
+| Fail | No Geode profiles found! Setup one by using `geode config setup`
+== install-binaries did not provide Geode.lib -> fetching loader zip directly ==
+== installed Geode.lib from /tmp/work/geode-win/Geode.lib ==
+total 1124
+drwxr-xr-x 2 root root    4096 Oct 11 13:46 .
+drwxr-xr-x 3 root root    4096 Oct 11 13:46 ..
+-rw-r--r-- 1 root root 1142370 Oct 11 13:46 Geode.lib
+Cloning into 'bindings'...
+Cocos2d.bro
+Entry.bro
+Extras.bro
+FMOD.bro
+GeometryDash.bro
+inline
+Kazmath.bro
+== TOOLCHAIN DONE ==

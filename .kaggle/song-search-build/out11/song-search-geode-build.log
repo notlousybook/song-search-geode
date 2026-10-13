@@ -1,0 +1,108 @@
+[{"stream_name":"stderr","time":9.038440709,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.038497042,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.038504856,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.038509935,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":9.832558194,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.832599669,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.832605535999999,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.832609552,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":57.300036005,"data":"== 1. deps: clang clang-tools lld llvm cmake git ==\n"}
+,{"stream_name":"stdout","time":57.300074664,"data":"== clang 18 \u003c 19 -\u003e apt.llvm.org llvm-toolchain-noble-19 ==\n"}
+,{"stream_name":"stdout","time":57.300081629,"data":"cmake : cmake version 3.31.10\n"}
+,{"stream_name":"stdout","time":57.300086504,"data":"git   : git version 2.43.0\n"}
+,{"stream_name":"stdout","time":57.300091505,"data":"ninja : 1.13.2.git.kitware.jobserver-pipe-1\n"}
+,{"stream_name":"stdout","time":57.300096343,"data":"clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)\n"}
+,{"stream_name":"stdout","time":57.300101261,"data":"clang-cl : MISSING\n"}
+,{"stream_name":"stdout","time":57.300105819,"data":"lld-link : OK\n"}
+,{"stream_name":"stdout","time":57.300110911,"data":"llvm-lib : OK\n"}
+,{"stream_name":"stdout","time":57.300113982,"data":"llvm-nm : OK\n"}
+,{"stream_name":"stdout","time":57.300116814,"data":"llvm-mt : OK\n"}
+,{"stream_name":"stdout","time":57.300119542,"data":"llvm-rc : OK\n"}
+,{"stream_name":"stdout","time":57.300122305,"data":"== clang-cl absent -\u003e linking /usr/lib/llvm-19/bin/clang as clang-cl ==\n"}
+,{"stream_name":"stdout","time":57.30012531,"data":"clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)\n"}
+,{"stream_name":"stdout","time":57.300128424,"data":"clang-cl: Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)\n"}
+,{"stream_name":"stdout","time":57.300131387,"data":"clang-cl : OK\n"}
+,{"stream_name":"stdout","time":57.300134397,"data":"lld-link : OK\n"}
+,{"stream_name":"stdout","time":57.300137228,"data":"llvm-lib : OK\n"}
+,{"stream_name":"stdout","time":57.300140103,"data":"llvm-nm : OK\n"}
+,{"stream_name":"stdout","time":57.300142912,"data":"llvm-mt : OK\n"}
+,{"stream_name":"stdout","time":57.300158588,"data":"llvm-rc : OK\n"}
+,{"stream_name":"stdout","time":57.300161551,"data":"== DEPS DONE ==\n"}
+,{"stream_name":"stdout","time":203.053527818,"data":"== 2. xwin splat (MSVC CRT + Windows SDK) ==\n"}
+,{"stream_name":"stdout","time":203.053565284,"data":"xwin 0.10.0\n"}
+,{"stream_name":"stdout","time":203.053570818,"data":"== xwin splat OK on attempt 1 ==\n"}
+,{"stream_name":"stdout","time":203.053575681,"data":"xwin done=1\n"}
+,{"stream_name":"stdout","time":203.053580519,"data":"--- splat layout ---\n"}
+,{"stream_name":"stdout","time":203.053584948,"data":"807M\t/tmp/work/splat\n"}
+,{"stream_name":"stdout","time":203.053589944,"data":"  OK   crt/include\n"}
+,{"stream_name":"stdout","time":203.053609854,"data":"  OK   crt/lib/x86_64\n"}
+,{"stream_name":"stdout","time":203.053614238,"data":"  OK   sdk/include/ucrt\n"}
+,{"stream_name":"stdout","time":203.05361769,"data":"  OK   sdk/include/um\n"}
+,{"stream_name":"stdout","time":203.053621439,"data":"  OK   sdk/include/shared\n"}
+,{"stream_name":"stdout","time":203.053624835,"data":"  OK   sdk/include/winrt\n"}
+,{"stream_name":"stdout","time":203.053628219,"data":"  OK   sdk/lib/ucrt/x86_64\n"}
+,{"stream_name":"stdout","time":203.053631992,"data":"  OK   sdk/lib/um/x86_64\n"}
+,{"stream_name":"stdout","time":203.053635333,"data":"  Windows.h present\n"}
+,{"stream_name":"stdout","time":208.044540403,"data":"== 3. toolchain + Geode CLI + Geode SDK + bindings ==\n"}
+,{"stream_name":"stdout","time":208.044576695,"data":"clang-cl-msvc.cmake\n"}
+,{"stream_name":"stdout","time":208.044582134,"data":"clang-msvc.cmake\n"}
+,{"stream_name":"stdout","time":208.044586064,"data":"dumpbin\n"}
+,{"stream_name":"stdout","time":208.044589855,"data":"example\n"}
+,{"stream_name":"stdout","time":208.044593505,"data":"LICENSE\n"}
+,{"stream_name":"stdout","time":208.044597121,"data":"llvm-mt-wrapper\n"}
+,{"stream_name":"stdout","time":208.04460073,"data":"llvm-rc-wrapper\n"}
+,{"stream_name":"stdout","time":208.044604398,"data":"msvc\n"}
+,{"stream_name":"stdout","time":208.044607953,"data":"powershell\n"}
+,{"stream_name":"stdout","time":208.044612024,"data":"README.md\n"}
+,{"stream_name":"stdout","time":208.044615861,"data":"winsdk\n"}
+,{"stream_name":"stdout","time":208.044619215,"data":"geode 3.9.0\n"}
+,{"stream_name":"stdout","time":208.044622937,"data":"fmod.lib\n"}
+,{"stream_name":"stdout","time":208.044626499,"data":"gd-libcurl.lib\n"}
+,{"stream_name":"stdout","time":208.044630125,"data":"glew32.lib\n"}
+,{"stream_name":"stdout","time":208.044633462,"data":"libcocos2d.lib\n"}
+,{"stream_name":"stdout","time":208.044637217,"data":"libExtensions.lib\n"}
+,{"stream_name":"stdout","time":208.04464108,"data":"sdk version: 5.11.1\n"}
+,{"stream_name":"stdout","time":208.044644355,"data":"== install-binaries did not provide Geode.lib -\u003e fetching loader zip directly ==\n"}
+,{"stream_name":"stdout","time":208.044648378,"data":"== installed Geode.lib from /tmp/work/geode-win/Geode.lib ==\n"}
+,{"stream_name":"stdout","time":208.044651864,"data":"total 1124\n"}
+,{"stream_name":"stdout","time":208.04465529,"data":"drwxr-xr-x 2 root root    4096 Oct 11 13:46 .\n"}
+,{"stream_name":"stdout","time":208.044658912,"data":"drwxr-xr-x 3 root root    4096 Oct 11 13:46 ..\n"}
+,{"stream_name":"stdout","time":208.044662233,"data":"-rw-r--r-- 1 root root 1142370 Oct 11 13:46 Geode.lib\n"}
+,{"stream_name":"stdout","time":208.044665871,"data":"Cocos2d.bro\n"}
+,{"stream_name":"stdout","time":208.044669713,"data":"Entry.bro\n"}
+,{"stream_name":"stdout","time":208.044673328,"data":"Extras.bro\n"}
+,{"stream_name":"stdout","time":208.044676921,"data":"FMOD.bro\n"}
+,{"stream_name":"stdout","time":208.044680582,"data":"GeometryDash.bro\n"}
+,{"stream_name":"stdout","time":208.0446842,"data":"inline\n"}
+,{"stream_name":"stdout","time":208.044687798,"data":"Kazmath.bro\n"}
+,{"stream_name":"stdout","time":208.044691457,"data":"== TOOLCHAIN DONE ==\n"}
+,{"stream_name":"stderr","time":208.045710505,"data":"| Fail | Unable to get SDK path: Unable to find Geode SDK (GEODE_SDK isn't set). Please install it using `geode sdk install` or use `geode sdk set-path` to set it to an existing clone. If you just installed the SDK using `geode sdk install`, please restart your terminal / computer to apply changes.\n"}
+,{"stream_name":"stderr","time":208.045763325,"data":"\n"}
+,{"stream_name":"stderr","time":208.045768951,"data":"| Fail | Unable to get SDK path: Unable to find Geode SDK (GEODE_SDK isn't set). Please install it using `geode sdk install` or use `geode sdk set-path` to set it to an existing clone. If you just installed the SDK using `geode sdk install`, please restart your terminal / computer to apply changes.\n"}
+,{"stream_name":"stderr","time":208.506979021,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":208.507630881,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":208.507645728,"data":"    import sys;import papermill as pm;pm.execute_notebook(\"__notebook__.ipynb\",\"__notebook__.ipynb\",progress_bar=False,log_output=True,stdout_file=sys.stdout,stderr_file=sys.stderr,allow_errors=False,timeout=43200)\n"}
+,{"stream_name":"stderr","time":208.507652422,"data":"                                      ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":208.507658472,"data":"  File \"/usr/local/lib/python3.13/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":208.507664107,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":208.507668992,"data":"    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":208.507673859,"data":"  File \"/usr/local/lib/python3.13/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":208.507678694,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":208.50768409,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":208.507689344,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":208.507694682,"data":"Exception encountered at \"In [4]\":\n"}
+,{"stream_name":"stderr","time":208.507699762,"data":"  File \"/tmp/ipykernel_16/3023324005.py\", line 26\n"}
+,{"stream_name":"stderr","time":208.507704429,"data":"    mj.write_text(json.dumps(m, indent=2) + '\n"}
+,{"stream_name":"stderr","time":208.507709504,"data":"                                            ^\n"}
+,{"stream_name":"stderr","time":208.50771444,"data":"SyntaxError: unterminated string literal (detected at line 26)\n"}
+,{"stream_name":"stderr","time":208.507719406,"data":"\n"}
+,{"stream_name":"stderr","time":208.507724113,"data":"\n"}
+,{"stream_name":"stderr","time":211.326444829,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":211.326499714,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":211.53038937,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":211.530420356,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":212.45999249,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":212.554057335,"data":"[NbConvertApp] Writing 67032 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":215.649842256,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":216.31159205,"data":"[NbConvertApp] Writing 390099 bytes to __results__.html\n"}
+]

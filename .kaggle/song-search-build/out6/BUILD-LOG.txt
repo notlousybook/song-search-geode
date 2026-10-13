@@ -1,0 +1,13 @@
+== 1. deps: clang clang-tools lld llvm cmake git ==
+== clang 18 < 19 -> apt.llvm.org llvm-toolchain-noble-19 ==
+cmake : cmake version 3.31.10
+git   : git version 2.43.0
+ninja : 1.13.2.git.kitware.jobserver-pipe-1
+clang : Ubuntu clang version 19.1.7 (++20250804090312+cd708029e0b2-1~exp1~20250804210325.79)
+clang-cl : MISSING
+lld-link : OK
+llvm-lib : OK
+llvm-nm : OK
+llvm-mt : OK
+llvm-rc : OK
+FATAL clang-cl missing
