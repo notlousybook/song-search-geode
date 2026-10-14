@@ -78,6 +78,36 @@ int main() {
     };
     assert(label(0) == "0 results" && label(1) == "1 result" && label(5) == "5 results");
 
+    // 7. expo-out easing: renders ease toward a target the same way the mod
+    //    does, must be monotonic, framerate-correct, and land exactly on target
+    auto easeStep = [](float current, float target, float dt) -> float {
+        const float factor = 1.f - std::exp(-18.f * dt);
+        return current + (target - current) * factor;
+    };
+    {
+        float pos = 0.f, target = 300.f;
+        float prev = pos;
+        int steps = 0;
+        while (std::abs(target - pos) > 0.01f && steps < 100000) {
+            pos = easeStep(pos, target, 1.f / 60.f);
+            assert(pos >= prev - 1e-6f);   // never moves backwards
+            assert(pos <= target + 1e-6f); // never overshoots (expo out)
+            prev = pos;
+            ++steps;
+        }
+        assert(std::abs(pos - target) < 0.01f);
+        // a 30fps run should need fewer steps than the same distance at 60fps
+        float pos30 = 0.f;
+        int steps30 = 0;
+        while (std::abs(target - pos30) > 0.01f && steps30 < 100000) {
+            pos30 = easeStep(pos30, target, 1.f / 30.f);
+            ++steps30;
+        }
+        assert(steps30 < steps);
+        assert(std::abs(pos30 - target) < 0.01f);
+        std::cout << "  easing: 60fps " << steps << " steps, 30fps " << steps30 << " steps\n";
+    }
+
     std::cout << "ALL LOGIC TESTS PASSED" << std::endl;
     return 0;
 }

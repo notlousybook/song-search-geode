@@ -50,8 +50,9 @@ static bool jukeboxPresent() {
 }
 
 // Collect the disc Jukebox added to the widget it just built, plus the song
-// metadata it resolved. Called right after CustomSongWidget::init so Jukebox
-// has finished laying its own UI out.
+// metadata it resolved. Jukebox has no public API, so read what it already
+// drew: its disc carries the ID "nong-button", and the sprite it swaps in for
+// verified NONGs is the gold variant.
 static void harvestJukeboxWidget(CustomSongWidget* widget, SongInfoObject* song) {
     if (!jukeboxPresent() || !widget || !song) return;
     auto node = widget->getChildByID("nong-button");
@@ -69,12 +70,28 @@ static void harvestJukeboxWidget(CustomSongWidget* widget, SongInfoObject* song)
     info.discFrame = frameName;
     // Jukebox swaps in the gold disc for verified NONGs (JBSongWidget::setVerifiedUI)
     info.verified = frameName.find("Gold") != std::string::npos;
-    // Jukebox keeps the pin visible whenever the song has NONGs configured,
-    // so the icon alone can't tell default-vs-custom; read the label it wrote.
     info.defaultActive = true;
     info.name = song->m_songName;
     info.artist = song->m_artistName;
     nongCache()[song->m_songID] = info;
+}
+
+// Walk the live scene and harvest from every CustomSongWidget in it. Called on
+// a delay because Jukebox's own $modify hook may run either before or after
+// ours - there is no ordering guarantee between mods - so reading its UI
+// immediately at init time is a race we would sometimes lose.
+static void harvestSceneWidgets() {
+    if (!jukeboxPresent()) return;
+    auto scene = CCDirector::sharedDirector()->getRunningScene();
+    if (!scene) return;
+    // CCArrayExt<CustomSongWidget*> iterating the scene's children and keeps
+    // only nodes of that type, which is exactly the filter we need here.
+    for (auto widget : CCArrayExt<CustomSongWidget*>(scene->getChildren())) {
+        if (!widget) continue;
+        if (auto song = widget->m_songInfoObject) {
+            harvestJukeboxWidget(widget, song);
+        }
+    }
 }
 
 class SimpleSongWidget;
@@ -87,6 +104,11 @@ public:
     std::vector<std::pair<std::string, SongInfoObject*>> m_downloaded_songs;
     float m_y_scroll = 0;
     float m_prev_y_scroll = 0;
+    // Smoothed scrolling: input moves the *target*, and update() eases the
+    // rendered scroll toward it with expo-out so dragging and the wheel both
+    // glide instead of snapping.
+    float m_target_scroll = 0;
+    float m_max_scroll = 0.f;
     std::deque<SimpleSongWidget*> m_scroll_elements;
     std::vector<SongInfoObject*> m_sorted;
     CCLabelBMFont* m_total_songs_label = nullptr;
@@ -227,6 +249,9 @@ public:
         clip->addChild(delete_menu);
 
         schedule(schedule_selector(CustomSongSearchLayer::check_mouse_movement), 1.f/30.f); // 30fps cuz ynot
+        // Eased scrolling runs from update(); setKeypadEnabled etc. already
+        // gate input, this only drives the scroll interpolation.
+        this->scheduleUpdate();
 
         do_search();
         return true;
@@ -312,7 +337,10 @@ public:
             (void)score;
             m_sorted.push_back(song);
         }
+        // New result set: reset both the rendered scroll and the easing target
+        // so a previous position can't linger.
         m_y_scroll = 0.f;
+        m_target_scroll = 0.f;
         update_scroll_elements(true);
 
         std::stringstream stream;
@@ -363,36 +391,26 @@ public:
         do_search();
     }
 
-    // Builds a button-looking node (GD button background + our icon on top)
-    // for one side of a CCMenuItemToggler.
-    static CCNode* makeTogglerNode(ZStringView sprite, bool useFrameName, const char* bgFrame, float scale) {
-        auto background = CCSprite::createWithSpriteFrameName(bgFrame);
-        if (!background) return nullptr;
-        CCSprite* icon = useFrameName
-            ? CCSprite::createWithSpriteFrameName(sprite.c_str())
-            : CCSprite::create(sprite.c_str());
-        if (!icon) return nullptr;
-        auto node = CCNode::create();
-        node->addChild(background);
-        node->addChild(icon);
-        node->setContentSize(background->getContentSize());
-        node->setScale(scale);
-        return node;
-    }
-
+    // Icon-only toggler. Our own resources are packaged as
+    // resources/<mod.id>/<name>, and Geode adds that dir to the search path,
+    // so they are addressed by bare filename - NOT "resources/<name>".
     CCMenuItemToggler* createToggler(
         ZStringView sprite, bool useFrameName,
-        geode::Function<void(CCMenuItemToggler*)> callback,
-        bool alt = false, float scale = 1.f
+        geode::Function<void(CCMenuItemToggler*)> callback
     ) {
-        // Alt = brighter base, matching Improved-Song-Browser's toggler look
-        const char* onBg = alt ? "GJ_button_02.png" : "GJ_button_03.png";
-        const char* offBg = alt ? "GJ_button_05.png" : "GJ_button_01.png";
-        auto on = makeTogglerNode(sprite, useFrameName, onBg, scale);
-        auto off = makeTogglerNode(sprite, useFrameName, offBg, scale);
-        if (!on || !off) return nullptr;
-        // CCMenuItemToggler sizes itself from the sprites it is given
-        return CCMenuItemExt::createToggler(on, off, std::move(callback));
+        CCSprite* onSpr = useFrameName
+            ? CCSprite::createWithSpriteFrameName(sprite.c_str())
+            : CCSprite::create(sprite.c_str());
+        CCSprite* offSpr = useFrameName
+            ? CCSprite::createWithSpriteFrameName(sprite.c_str())
+            : CCSprite::create(sprite.c_str());
+        if (!onSpr || !offSpr) return nullptr;
+        onSpr->setScale(0.95f);
+        offSpr->setScale(0.75f);
+        onSpr->setColor({255, 255, 255});
+        offSpr->setColor({120, 120, 120});
+        auto toggler = CCMenuItemExt::createToggler(onSpr, offSpr, std::move(callback));
+        return toggler;
     }
 
     void setupFilterMenu(const CCSize& win_size) {
@@ -416,8 +434,7 @@ public:
                 m_ascending = !m_ascending;
                 t->toggle(m_ascending);
                 do_search();
-            },
-            false, 1.f
+            }
         );
         if (m_orderToggler) {
             m_orderToggler->setID("order-btn"_spr);
@@ -430,29 +447,27 @@ public:
 
         auto* prio = this->createToggler(
             "GJ_timeIcon_001.png", true,
-            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Priority, t); },
-            true, 0.95f
+            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Priority, t); }
         );
         if (prio) { prio->setID("priority-btn"_spr); prio->toggle(true); m_filterTogglers.push_back(prio); m_filterMenu->addChild(prio); }
 
         auto* name = this->createToggler(
             "GJ_noteIcon_001.png", true,
-            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Name, t); },
-            true, 0.95f
+            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Name, t); }
         );
         if (name) { name->setID("name-btn"_spr); m_filterTogglers.push_back(name); m_filterMenu->addChild(name); }
 
+        // our own resources, addressed by bare filename (Geode adds the mod's
+        // resource dir to the search path)
         auto* artist = this->createToggler(
-            "resources/artist_icon.png", false,
-            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Artist, t); },
-            true, 0.98f
+            "artist_icon.png", false,
+            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Artist, t); }
         );
         if (artist) { artist->setID("artist-btn"_spr); m_filterTogglers.push_back(artist); m_filterMenu->addChild(artist); }
 
         auto* id = this->createToggler(
-            "resources/id_icon.png", false,
-            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::ID, t); },
-            true, 0.95f
+            "id_icon.png", false,
+            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::ID, t); }
         );
         if (id) { id->setID("id-btn"_spr); m_filterTogglers.push_back(id); m_filterMenu->addChild(id); }
 
@@ -501,13 +516,47 @@ public:
 
     void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) override {
         FLAlertLayer::ccTouchMoved(pTouch, pEvent);
-        m_y_scroll += pTouch->getDelta().y;
-        update_scroll_elements();
+        // Drag drives the target; update() does the easing.
+        m_target_scroll += pTouch->getDelta().y;
+        clampTargetScroll();
     }
 
     void scrollWheel(float y, float x) override {
         (void)x;
-        m_y_scroll += y * 1.5f;
+        m_target_scroll += y * 1.5f;
+        clampTargetScroll();
+    }
+
+    // Keep the target inside the list bounds so easing never overshoots.
+    void clampTargetScroll() {
+        constexpr float height = widget_height + widget_spacing;
+        const auto maxScroll = height * (static_cast<int>(m_sorted.size()) - n_widgets + 3);
+        m_max_scroll = maxScroll < 0 ? 0.f : maxScroll;
+        m_target_scroll = std::clamp(m_target_scroll, 0.f, m_max_scroll);
+    }
+
+    // Expo-out easing toward m_target_scroll. Time-corrected, so it feels the
+    // same at any framerate: factor = 1 - exp(-stiffness * dt).
+    void update(float dt) override {
+        if (m_sorted.empty()) return;
+        float factor;
+        if (dt > 0.f) {
+            factor = 1.f - std::exp(-18.f * dt);
+        } else {
+            factor = 1.f;
+        }
+        const float delta = m_target_scroll - m_y_scroll;
+        // Snap when the remaining distance is sub-pixel so we stop scheduling
+        // redundant work once settled.
+        if (std::abs(delta) < 0.01f) {
+            if (m_y_scroll != m_target_scroll) {
+                m_y_scroll = m_target_scroll;
+                update_scroll_elements();
+                move_delete_btn();
+            }
+            return;
+        }
+        m_y_scroll += delta * factor;
         update_scroll_elements();
         move_delete_btn();
     }
@@ -535,6 +584,7 @@ protected:
     CCLabelBMFont* m_artist_label = nullptr;
     CCSprite* m_nong_icon = nullptr;
     CCMenuItemSpriteExtra* m_play_button = nullptr;
+    CCMenuItemSpriteExtra* m_select_button = nullptr;
     CustomSongSearchLayer* m_parent = nullptr;
 public:
     bool init(CustomSongSearchLayer* s) {
@@ -574,18 +624,40 @@ public:
             menu_selector(SimpleSongWidget::on_play)
         );
         menu->addChild(m_play_button);
-        auto select_button = CCMenuItemSpriteExtra::create(
+        m_select_button = CCMenuItemSpriteExtra::create(
             CCSprite::createWithSpriteFrameName("GJ_selectSongBtn_001.png"),
             this,
             menu_selector(SimpleSongWidget::on_select)
         );
         m_play_button->setPositionX(width / 2.f - m_play_button->getScaledContentSize().width / 2.f - 3.f);
-        select_button->setPositionX(
-            m_play_button->getPositionX() - m_play_button->getScaledContentSize().width / 2.f - select_button->getScaledContentSize().width / 2.f - 2.f
+        m_select_button->setPositionX(
+            m_play_button->getPositionX() - m_play_button->getScaledContentSize().width / 2.f - m_select_button->getScaledContentSize().width / 2.f - 2.f
         );
         menu->setPosition({0, 1});
-        menu->addChild(select_button);
+        menu->addChild(m_select_button);
         return true;
+    }
+
+    // Swaps the select button between "Use" and "In Use" for whichever song the
+    // level currently has set, mirroring CustomSongWidget::songStateChanged.
+    void update_select_btn() {
+        if (!m_song || !m_select_button) return;
+        int currentID = 0;
+        bool known = false;
+        if (auto editorUI = EditorUI::get()) {
+            if (editorUI->m_editorLayer &&
+                editorUI->m_editorLayer->m_levelSettings &&
+                editorUI->m_editorLayer->m_levelSettings->m_level) {
+                currentID = editorUI->m_editorLayer->m_levelSettings->m_level->m_songID;
+                known = true;
+            }
+        }
+        const bool selected = known && currentID == m_song->m_songID;
+        m_select_button->setEnabled(!selected);
+        m_select_button->setSprite(CCSprite::createWithSpriteFrameName(
+            selected ? "GJ_selectSongOnBtn_001.png" : "GJ_selectSongBtn_001.png"
+        ));
+        m_select_button->updateSprite();
     }
 
     void set_song(SongInfoObject* song) {
@@ -606,6 +678,7 @@ public:
         float scale = (std::min)(0.8f, 250.f / m_name_label->getContentSize().width);
         m_name_label->setScale((std::min)(scale, 15.f / m_name_label->getContentSize().height));
         update_nong_icon();
+        update_select_btn();
         update_play_btn();
     }
 
@@ -649,6 +722,10 @@ public:
         MusicDownloadManager::sharedState()->songStateChanged();
         if (m_parent->m_parent->m_songWidget) {
             m_parent->m_parent->m_songWidget->updateSongObject(m_song);
+        }
+        // The level's songID just changed, so every row's "Use" state is stale
+        for (auto& widget : m_parent->m_scroll_elements) {
+            if (widget) widget->update_select_btn();
         }
     }
 
@@ -694,6 +771,8 @@ void CustomSongSearchLayer::update_scroll_elements(bool force) {
         m_y_scroll = 0.f;
     else
         m_y_scroll = std::clamp(m_y_scroll, 0.f, m);
+    // Track the bound so input can clamp the target against the same limit.
+    m_max_scroll = m < 0 ? 0.f : m;
     const auto i_offset = static_cast<size_t>(m_y_scroll / height);
     int diff = static_cast<int>(m_prev_y_scroll / height) - static_cast<int>(i_offset);
     // :worried:
@@ -744,6 +823,10 @@ class $modify(SongSearchCustomSongLayer, CustomSongLayer) {
             return;
         }
         (void)sender;
+        // Refresh NONG data before the dialog opens: our rows are built from
+        // the cache, and GJSongBrowser's widgets are the only place Jukebox
+        // has drawn discs at this point.
+        harvestSceneWidgets();
         CustomSongSearchLayer::create(this)->show();
     }
 };
@@ -753,8 +836,6 @@ class $modify(SongSearchCustomSongLayer, CustomSongLayer) {
 // repaint them in our rows. Only active while Jukebox is installed; without
 // it this hook is a cheap no-op.
 class $modify(SongSearchJukeboxSpy, CustomSongWidget) {
-    struct Fields {};
-
     bool init(SongInfoObject* song, CustomSongDelegate* delegate, bool showSelect,
               bool showPlay, bool showDownload, bool isRobtopSong, bool unk1,
               bool isMusicLibrary, int unk2) {
@@ -762,10 +843,16 @@ class $modify(SongSearchJukeboxSpy, CustomSongWidget) {
                                     isRobtopSong, unk1, isMusicLibrary, unk2)) {
             return false;
         }
-        // Runs after Jukebox's own init hook, so its UI is already in place.
-        if (jukeboxPresent() && Mod::get()->getSettingValue<bool>("nong-symbols")) {
-            harvestJukeboxWidget(this, song);
-        }
+        // Hook order between mods is not guaranteed, so defer harvesting until
+        // Jukebox has laid out its disc whether its hook ran before or after
+        // ours. One frame is plenty.
+        this->scheduleOnce(schedule_selector(SongSearchJukeboxSpy::delayedHarvest), 0.05f);
         return true;
+    }
+
+    void delayedHarvest(float) {
+        if (!jukeboxPresent()) return;
+        if (!Mod::get()->getSettingValue<bool>("nong-symbols")) return;
+        harvestJukeboxWidget(this, this->m_songInfoObject);
     }
 };

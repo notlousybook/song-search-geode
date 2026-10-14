@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "geode-kaggle-crossbuild": {
+      "source": "./.kaggle/skills",
+      "sourceType": "local",
+      "computedHash": "ee79b56009c8c2217769b7b45a2c322ce3770ad450e905ac8c78a5985aa1510c"
+    }
+  }
+}
