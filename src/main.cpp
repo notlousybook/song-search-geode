@@ -6,6 +6,8 @@
 #include <deque>
 #include <algorithm>
 #include <cmath>
+#include <climits>
+#include <unordered_map>
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include "fts_fuzzy_match.h"
@@ -55,7 +57,10 @@ static bool jukeboxPresent() {
 // verified NONGs is the gold variant.
 static void harvestJukeboxWidget(CustomSongWidget* widget, SongInfoObject* song) {
     if (!jukeboxPresent() || !widget || !song) return;
-    auto node = widget->getChildByID("nong-button");
+    // Jukebox adds the disc inside a pinMenu it parents to the widget, so the
+    // button is a grandchild - getChildByID only looks at direct children,
+    // this must be the recursive variant.
+    auto node = widget->getChildByIDRecursive("nong-button");
     if (!node) return; // Jukebox found no NONG data for this song
     auto item = static_cast<CCMenuItemSpriteExtra*>(node);
     // getNormalImage() returns a CCNode*; Jukebox swaps this sprite for the
@@ -124,8 +129,12 @@ public:
     FilterMode m_filterMode = FilterMode::Priority;
     bool m_ascending = false;
     CCMenu* m_filterMenu = nullptr;
-    std::vector<CCMenuItemToggler*> m_filterTogglers;
-    CCMenuItemToggler* m_orderToggler = nullptr;
+    std::vector<CCMenuItemSpriteExtra*> m_filterTogglers;
+    CCMenuItemSpriteExtra* m_orderButton = nullptr;
+    // Last level songID we painted a "in use" state for; lets the 30fps tick
+    // refresh rows in real time when the song changes outside our dialog.
+    int m_last_level_song_id = INT_MIN;
+    static constexpr float total_height_const = widget_height * (n_widgets - 1);
 
     bool isPreviewing(const gd::string& path) const {
         return m_previewing && m_preview_path == path;
@@ -249,6 +258,8 @@ public:
         clip->addChild(delete_menu);
 
         schedule(schedule_selector(CustomSongSearchLayer::check_mouse_movement), 1.f/30.f); // 30fps cuz ynot
+        // Seed the song-change watcher so the first paint uses the real value
+        m_last_level_song_id = INT_MIN;
         // Eased scrolling runs from update(); setKeypadEnabled etc. already
         // gate input, this only drives the scroll interpolation.
         this->scheduleUpdate();
@@ -257,6 +268,9 @@ public:
         return true;
     }
 
+    // Also keeps the "in use" state live: the song can be changed by the
+    // original browser, the editor, or another mod, so the rows are re-painted
+    // whenever the level's songID is observed to change.
     void check_mouse_movement(float) {
         const auto director = CCDirector::sharedDirector();
         const auto win_size = director->getWinSize();
@@ -268,6 +282,21 @@ public:
         if (mouse_pos.y != m_prev_mouse_pos.y) {
             m_prev_mouse_pos = mouse_pos;
             move_delete_btn();
+        }
+
+        int levelSongID = 0;
+        bool known = false;
+        if (auto editorUI = EditorUI::get()) {
+            if (editorUI->m_editorLayer &&
+                editorUI->m_editorLayer->m_levelSettings &&
+                editorUI->m_editorLayer->m_levelSettings->m_level) {
+                levelSongID = editorUI->m_editorLayer->m_levelSettings->m_level->m_songID;
+                known = true;
+            }
+        }
+        if (known && levelSongID != m_last_level_song_id) {
+            m_last_level_song_id = levelSongID;
+            refreshSelectButtons();
         }
 
         m_prev_mouse_pos = mouse_pos;
@@ -374,50 +403,75 @@ public:
         return false;
     }
 
-    void setFilterMode(FilterMode mode, CCMenuItemToggler* toggler) {
+    void setFilterMode(FilterMode mode) {
         m_filterMode = mode;
-        for (auto* t : m_filterTogglers) {
-            if (t) t->toggle(false);
-        }
-        if (toggler) toggler->toggle(true);
+        refreshFilterVisuals();
         do_search();
     }
 
-    void toggleOrder(CCObject*) {
+    void toggleOrder() {
         m_ascending = !m_ascending;
-        if (m_orderToggler) {
-            m_orderToggler->toggle(m_ascending);
-        }
+        refreshFilterVisuals();
         do_search();
     }
 
-    // Icon-only toggler. Our own resources are packaged as
-    // resources/<mod.id>/<name>, and Geode adds that dir to the search path,
-    // so they are addressed by bare filename - NOT "resources/<name>".
-    CCMenuItemToggler* createToggler(
-        ZStringView sprite, bool useFrameName,
-        geode::Function<void(CCMenuItemToggler*)> callback
+    // Loads one of our own sprites, falling back to a GD frame so a button can
+    // never render as a broken texture. Absolute path first, because relying on
+    // CCFileUtils search paths is what made these icons vanish before.
+    static CCSprite* loadFilterIcon(ZStringView ownName, const char* fallbackFrame) {
+        const auto resPath = Mod::get()->getResourcesDir() / std::string(ownName);
+        if (auto spr = CCSprite::create(resPath.string().c_str())) {
+            return spr;
+        }
+        if (auto spr = CCSprite::create(ownName.c_str())) {
+            return spr;
+        }
+        return CCSprite::createWithSpriteFrameName(fallbackFrame);
+    }
+
+    // Filters are plain sprite items with the active state painted by hand.
+    // CCMenuItemToggler fights with GD's own selected/unselected handling and
+    // left the buttons looking permanently disabled, so its semantics are
+    // avoided entirely; the mode is stored on the item's tag.
+    CCMenuItemSpriteExtra* createFilterButton(
+        ZStringView id, CCSprite* icon,
+        geode::Function<void(CCMenuItemSpriteExtra*)> callback
     ) {
-        CCSprite* onSpr = useFrameName
-            ? CCSprite::createWithSpriteFrameName(sprite.c_str())
-            : CCSprite::create(sprite.c_str());
-        CCSprite* offSpr = useFrameName
-            ? CCSprite::createWithSpriteFrameName(sprite.c_str())
-            : CCSprite::create(sprite.c_str());
-        if (!onSpr || !offSpr) return nullptr;
-        onSpr->setScale(0.95f);
-        offSpr->setScale(0.75f);
-        onSpr->setColor({255, 255, 255});
-        offSpr->setColor({120, 120, 120});
-        auto toggler = CCMenuItemExt::createToggler(onSpr, offSpr, std::move(callback));
-        return toggler;
+        if (!icon) return nullptr;
+        // geode::Function is move-only and not const-callable, so hand it over
+        // directly rather than wrapping it in a copy-capturing lambda.
+        auto item = CCMenuItemExt::createSpriteExtra(icon, std::move(callback));
+        if (!item) return nullptr;
+        item->setID(id);
+        return item;
+    }
+
+    // Paints active vs inactive. Active is brighter and slightly larger.
+    void refreshFilterVisuals() {
+        for (auto* t : m_filterTogglers) {
+            if (!t) continue;
+            const bool active = t->getTag() == static_cast<int>(m_filterMode);
+            t->setScale(active ? 0.62f : 0.5f);
+            t->setColor(active ? ccColor3B{255, 255, 255} : ccColor3B{130, 130, 130});
+            t->setOpacity(active ? 255 : 180);
+            t->setZOrder(active ? 2 : 1);
+        }
+        // The order button's "on" state is reversed ordering
+        if (m_orderButton) {
+            m_orderButton->setScale(m_ascending ? 0.62f : 0.5f);
+            m_orderButton->setColor(m_ascending ? ccColor3B{255, 255, 255} : ccColor3B{130, 130, 130});
+            m_orderButton->setOpacity(m_ascending ? 255 : 180);
+            m_orderButton->setZOrder(m_ascending ? 2 : 1);
+        }
     }
 
     void setupFilterMenu(const CCSize& win_size) {
         if (m_filterMenu) return;
         m_filterMenu = CCMenu::create();
         m_filterMenu->setID("filter-menu"_spr);
-        m_filterMenu->setPosition({win_size.width - 100.f, win_size.height - 25.f});
+        // Inside the dialog, just left of the search input, instead of pinned
+        // to the top of the screen where it looked detached.
+        m_filterMenu->setPosition({win_size.width / 2.f - 235.f, total_height_const + 28.51f});
         m_filterMenu->setScale(0.45f);
         m_filterMenu->setLayout(
             SimpleRowLayout::create()
@@ -428,49 +482,44 @@ public:
         );
         m_mainLayer->addChild(m_filterMenu);
 
-        m_orderToggler = this->createToggler(
-            "GJ_sortIcon_001.png", true,
-            [this](CCMenuItemToggler* t) {
-                m_ascending = !m_ascending;
-                t->toggle(m_ascending);
-                do_search();
-            }
+        // order / reverse toggle (GD frame)
+        m_orderButton = createFilterButton(
+            "order-btn"_spr, CCSprite::createWithSpriteFrameName("GJ_sortIcon_001.png"),
+            [this](CCMenuItemSpriteExtra*) { this->toggleOrder(); }
         );
-        if (m_orderToggler) {
-            m_orderToggler->setID("order-btn"_spr);
-            m_filterMenu->addChild(m_orderToggler);
+        if (m_orderButton) {
+            m_orderButton->setTag(-1);
+            m_filterMenu->addChild(m_orderButton);
         }
 
         auto spacer = CCNode::create();
         spacer->setContentSize({1.f, 3.f});
         m_filterMenu->addChild(spacer);
 
-        auto* prio = this->createToggler(
-            "GJ_timeIcon_001.png", true,
-            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Priority, t); }
-        );
-        if (prio) { prio->setID("priority-btn"_spr); prio->toggle(true); m_filterTogglers.push_back(prio); m_filterMenu->addChild(prio); }
+        struct Spec { FilterMode mode; const char* frame; const char* own; const char* id; };
+        const Spec specs[] = {
+            {FilterMode::Priority, "GJ_timeIcon_001.png", nullptr, "priority-btn"},
+            {FilterMode::Name,     "GJ_noteIcon_001.png", nullptr, "name-btn"},
+            {FilterMode::Artist,   nullptr,               "artist_icon.png", "artist-btn"},
+            {FilterMode::ID,       nullptr,               "id_icon.png",     "id-btn"},
+        };
 
-        auto* name = this->createToggler(
-            "GJ_noteIcon_001.png", true,
-            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Name, t); }
-        );
-        if (name) { name->setID("name-btn"_spr); m_filterTogglers.push_back(name); m_filterMenu->addChild(name); }
+        for (const auto& spec : specs) {
+            CCSprite* icon = spec.own
+                ? loadFilterIcon(spec.own, spec.frame ? spec.frame : "GJ_noteIcon_001.png")
+                : CCSprite::createWithSpriteFrameName(spec.frame);
+            if (!icon) continue;
+            auto* btn = createFilterButton(spec.id, icon,
+                [this, spec](CCMenuItemSpriteExtra*) {
+                    this->setFilterMode(spec.mode);
+                });
+            if (!btn) continue;
+            btn->setTag(static_cast<int>(spec.mode));
+            m_filterTogglers.push_back(btn);
+            m_filterMenu->addChild(btn);
+        }
 
-        // our own resources, addressed by bare filename (Geode adds the mod's
-        // resource dir to the search path)
-        auto* artist = this->createToggler(
-            "artist_icon.png", false,
-            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::Artist, t); }
-        );
-        if (artist) { artist->setID("artist-btn"_spr); m_filterTogglers.push_back(artist); m_filterMenu->addChild(artist); }
-
-        auto* id = this->createToggler(
-            "id_icon.png", false,
-            [this](CCMenuItemToggler* t) { this->setFilterMode(FilterMode::ID, t); }
-        );
-        if (id) { id->setID("id-btn"_spr); m_filterTogglers.push_back(id); m_filterMenu->addChild(id); }
-
+        this->refreshFilterVisuals();
         m_filterMenu->updateLayout();
     }
 
@@ -511,6 +560,8 @@ public:
             }
         }
     }
+
+    void refreshSelectButtons();
 
     void update_scroll_elements(bool force = false);
 
@@ -754,6 +805,14 @@ public:
         return ret;
     }
 };
+
+// Defined out-of-line because SimpleSongWidget is only forward-declared where
+// the class is written.
+void CustomSongSearchLayer::refreshSelectButtons() {
+    for (auto& widget : m_scroll_elements) {
+        if (widget) widget->update_select_btn();
+    }
+}
 
 void CustomSongSearchLayer::update_scroll_elements(bool force) {
     constexpr float spacing = widget_spacing;
