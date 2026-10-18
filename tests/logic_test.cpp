@@ -1,5 +1,5 @@
 // Standalone logic test for the song-search port.
-// Mirrors the fuzzy search + sort + scroll-window logic in src/main.cpp
+// Mirrors the fuzzy search + label-fit + scroll-window logic in src/main.cpp
 // without Geode headers, so it can run on plain GCC.
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include "fts_fuzzy_match.h"
@@ -106,6 +106,42 @@ int main() {
         assert(steps30 < steps);
         assert(std::abs(pos30 - target) < 0.01f);
         std::cout << "  easing: 60fps " << steps << " steps, 30fps " << steps30 << " steps\n";
+    }
+
+    // 8. label fit: mirrors SimpleSongWidget::fitLabel - shrink from the base
+    //    scale down toward minScale, then truncate with "..." so text can
+    //    never run under the row's buttons
+    {
+        auto width = [](const std::string& s) { return 10.f * s.size(); }; // fake font: 10px/char
+        auto fit = [&](const std::string& text, float base, float maxW, float minS) -> std::string {
+            const float scale = std::min(base, maxW / width(text));
+            if (scale >= minS) return text; // shown whole (possibly shrunk)
+            size_t lo = 0, hi = text.size();
+            std::string best = "...";
+            while (lo <= hi) {
+                const size_t mid = lo + (hi - lo) / 2;
+                std::string candidate = text.substr(0, mid) + "...";
+                if (width(candidate) <= maxW / minS) { best = candidate; lo = mid + 1; }
+                else { if (mid == 0) break; hi = mid - 1; }
+            }
+            return best;
+        };
+        constexpr float kMax = 240.f, kMin = 0.5f;
+        // short text untouched
+        assert(fit("Short", 0.8f, kMax, kMin) == "Short");
+        // 280px fits the full budget at base scale, so it stays whole
+        std::string medium(28, 'x');
+        assert(fit(medium, 0.8f, kMax, kMin) == medium);
+        // 400px needs a shrink to 0.6, but still fits whole above minScale
+        std::string shrink(40, 'y');
+        assert(fit(shrink, 0.8f, kMax, kMin) == shrink);
+        // 600px cannot fit even at minScale -> cut with ellipsis
+        std::string huge(60, 'z');
+        std::string cut = fit(huge, 0.8f, kMax, kMin);
+        assert(cut.size() < huge.size());
+        assert(cut.size() >= 3 && cut.substr(cut.size() - 3) == "...");
+        assert(width(cut) <= kMax / kMin + 1e-3f); // fits the budget at minScale
+        std::cout << "  label fit: 60-char name -> " << cut.size() << " chars with ellipsis\n";
     }
 
     std::cout << "ALL LOGIC TESTS PASSED" << std::endl;

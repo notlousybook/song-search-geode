@@ -6,8 +6,6 @@
 #include <deque>
 #include <algorithm>
 #include <cmath>
-#include <climits>
-#include <unordered_map>
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include "fts_fuzzy_match.h"
@@ -18,85 +16,19 @@ constexpr int n_widgets = 6;
 constexpr float widget_width = 350.f;
 constexpr float widget_height = 50.f;
 constexpr float widget_spacing = 5.f;
+// Rows sit this much lower than the raw list height math would put them, so
+// the top row's corner disc stays clear of the search bar above (which now
+// draws over the rows) instead of tucking under it at rest.
+constexpr float list_top_pad = 12.f;
 
-// Filter modes (ported from Alphalaneous/Improved-Song-Browser's SortMode).
-enum class FilterMode {
-    Priority,
-    Name,
-    Artist,
-    ID
-};
-
-// Data scraped from Jukebox's own CustomSongWidget. Jukebox ships no public
-// API (no headers bundled), but it tags its disc button with the ID
-// "nong-button", and the disc frame comes from a spritesheet Jukebox
-// registers globally - so we can copy the icon and metadata it already
-// resolved instead of re-implementing NONG storage.
-struct NongInfo {
-    std::string discFrame;   // "JB_PinDisc.png" or "JB_PinDiscGold.png"
-    bool verified = false;
-    bool defaultActive = true;
-    std::string name;
-    std::string artist;
-};
-
-// songID -> NongInfo, filled by the spy hook below. Empty when Jukebox is
-// not installed or the song has no NONG configured.
-static std::unordered_map<int, NongInfo>& nongCache() {
-    static std::unordered_map<int, NongInfo> cache;
-    return cache;
-}
-
+// Jukebox draws a small pin disc on every CustomSongWidget it manages - it is
+// the entry point to its nong picker, not a "song has a nong" badge. Verified
+// against Jukebox 3.8.0's source: setupJBSW() -> createSongLabels() ->
+// addPopupOpener() adds the disc unconditionally, and nong data only hits
+// disk (manifest/<songID>.json) once one is actually added or activated.
+// Our rows mirror that look with our own copy of the texture.
 static bool jukeboxPresent() {
     return Loader::get()->getLoadedMod("fleym.nongd") != nullptr;
-}
-
-// Collect the disc Jukebox added to the widget it just built, plus the song
-// metadata it resolved. Jukebox has no public API, so read what it already
-// drew: its disc carries the ID "nong-button", and the sprite it swaps in for
-// verified NONGs is the gold variant.
-static void harvestJukeboxWidget(CustomSongWidget* widget, SongInfoObject* song) {
-    if (!jukeboxPresent() || !widget || !song) return;
-    // Jukebox adds the disc inside a pinMenu it parents to the widget, so the
-    // button is a grandchild - getChildByID only looks at direct children,
-    // this must be the recursive variant.
-    auto node = widget->getChildByIDRecursive("nong-button");
-    if (!node) return; // Jukebox found no NONG data for this song
-    auto item = static_cast<CCMenuItemSpriteExtra*>(node);
-    // getNormalImage() returns a CCNode*; Jukebox swaps this sprite for the
-    // gold variant when a NONG is verified.
-    auto spr = static_cast<CCSprite*>(item->getNormalImage());
-    if (!spr) return;
-    std::string frameName = "JB_PinDisc.png";
-    if (auto* frame = spr->displayFrame()) {
-        frameName = frame->getFrameName();
-    }
-    NongInfo info;
-    info.discFrame = frameName;
-    // Jukebox swaps in the gold disc for verified NONGs (JBSongWidget::setVerifiedUI)
-    info.verified = frameName.find("Gold") != std::string::npos;
-    info.defaultActive = true;
-    info.name = song->m_songName;
-    info.artist = song->m_artistName;
-    nongCache()[song->m_songID] = info;
-}
-
-// Walk the live scene and harvest from every CustomSongWidget in it. Called on
-// a delay because Jukebox's own $modify hook may run either before or after
-// ours - there is no ordering guarantee between mods - so reading its UI
-// immediately at init time is a race we would sometimes lose.
-static void harvestSceneWidgets() {
-    if (!jukeboxPresent()) return;
-    auto scene = CCDirector::sharedDirector()->getRunningScene();
-    if (!scene) return;
-    // CCArrayExt<CustomSongWidget*> iterating the scene's children and keeps
-    // only nodes of that type, which is exactly the filter we need here.
-    for (auto widget : CCArrayExt<CustomSongWidget*>(scene->getChildren())) {
-        if (!widget) continue;
-        if (auto song = widget->m_songInfoObject) {
-            harvestJukeboxWidget(widget, song);
-        }
-    }
 }
 
 class SimpleSongWidget;
@@ -124,17 +56,26 @@ public:
     // Preview plays on channel 0 via FMODAudioEngine::playMusic/stopMusic.
     gd::string m_preview_path;
     bool m_previewing = false;
+    // Seconds since the current preview started; used together with a
+    // channel-playing poll to flip the button back when the track ends.
+    float m_preview_elapsed = 0.f;
 
-    // Filtering (ported from Improved-Song-Browser's SortMode togglers)
-    FilterMode m_filterMode = FilterMode::Priority;
-    bool m_ascending = false;
-    CCMenu* m_filterMenu = nullptr;
-    std::vector<CCMenuItemSpriteExtra*> m_filterTogglers;
-    CCMenuItemSpriteExtra* m_orderButton = nullptr;
-    // Last level songID we painted a "in use" state for; lets the 30fps tick
-    // refresh rows in real time when the song changes outside our dialog.
-    int m_last_level_song_id = INT_MIN;
+    // Song the editor currently has set, mirrored on the layer so every
+    // "Use/In Use" paint reads one source. Seeded on open, set optimistically
+    // when a row is clicked, and corrected by the 30fps tick only when the
+    // level's own value actually moves (an external change).
+    int m_ui_song_id = 0;
+    bool m_ui_song_known = false;
+    // Last value observed from the editor's level. The 30fps sync repaints
+    // only when this actually moves (an external change) - an optimistic row
+    // click must not be undone just because the level write behind it hasn't
+    // landed yet.
+    int m_last_level_song_id = 0;
+    bool m_last_level_song_known = false;
     static constexpr float total_height_const = widget_height * (n_widgets - 1);
+    // X center the whole column is laid out on (screen center, or the parent
+    // dialog's content center when that reads sane - resolved in init).
+    float m_content_cx = 0.f;
 
     bool isPreviewing(const gd::string& path) const {
         return m_previewing && m_preview_path == path;
@@ -153,6 +94,7 @@ public:
         FMODAudioEngine::sharedEngine()->playMusic(path, false, 0.f, 0);
         m_preview_path = path;
         m_previewing = true;
+        m_preview_elapsed = 0.f;
     }
 
     bool init(CustomSongLayer* parent) {
@@ -166,11 +108,28 @@ public:
 
         auto win_size = CCDirector::sharedDirector()->getWinSize();
 
+        // The vanilla CustomSongLayer dialog behind us draws a frame our UI
+        // lives inside; its content is not guaranteed to hug the screen
+        // center. Center our column on the parent's content area when that
+        // reads sane, and fall back to the plain screen center otherwise.
+        m_content_cx = win_size.width / 2.f;
+        if (m_parent && m_parent->m_mainLayer) {
+            const auto frame_size = m_parent->m_mainLayer->getContentSize();
+            const float frame_cx = m_parent->m_mainLayer->getPositionX();
+            if (frame_size.width >= 360.f && frame_size.width <= 560.f &&
+                frame_cx >= win_size.width / 2.f - 48.f &&
+                frame_cx <= win_size.width / 2.f + 48.f) {
+                m_content_cx = frame_cx;
+            }
+            log::info("SongSearch: parent frame {}x{} at x={} -> content cx={}",
+                frame_size.width, frame_size.height, frame_cx, m_content_cx);
+        }
+
         this->registerWithTouchDispatcher();
         this->incrementForcePrio();
 
         m_div = CCNode::create();
-        m_div->setPosition({win_size.width / 2, 0});
+        m_div->setPosition({m_content_cx, 0});
 
         constexpr float total_height = widget_height * (n_widgets - 1);
 
@@ -188,16 +147,21 @@ public:
         texture->setAliasTexParameters();
         auto stencil = CCSprite::createWithTexture(texture);
         stencil->setScaleX(win_size.width / stencil->getContentSize().width);
-        stencil->setScaleY(total_height / stencil->getContentSize().height);
+        // +12 units of headroom: the top row's corner nong disc pokes above
+        // its row and would otherwise be clipped flat at the list's top edge.
+        stencil->setScaleY((total_height + 12.f) / stencil->getContentSize().height);
         stencil->setAnchorPoint({0, 0});
 
         auto clip = CCClippingNode::create(stencil);
         clip->addChild(m_div);
         clip->setAlphaThreshold(0.1f);
+        // Draws under every other UI node (search bar, close button, label):
+        // rows scroll behind the search bar instead of riding over its box.
+        clip->setZOrder(-5);
         m_mainLayer->addChild(clip);
 
         m_input = CCTextInputNode::create(200.f, 50.f, "Song Search", "bigFont.fnt");
-        m_input->setPosition({win_size.width / 2, total_height + 28.51f});
+        m_input->setPosition({m_content_cx, total_height + 28.51f});
         m_input->setLabelPlaceholderColor({200, 200, 200});
         m_input->setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQSRTUVWXYZ0123456789-_+=$!#&*\"\':@()[]{}.,;/?\\~^ <>%");
         m_input->setDelegate(this);
@@ -223,16 +187,13 @@ public:
         }
 
         m_total_songs_label = CCLabelBMFont::create("", "goldFont.fnt");
-        m_total_songs_label->setAnchorPoint({0, 1});
-        m_total_songs_label->setScale(0.4f);
-        // Top-left corner so the filter strip can own the top-right.
-        m_total_songs_label->setPosition({30.f, win_size.height});
+        m_total_songs_label->setAnchorPoint({1, 1});
+        m_total_songs_label->setScale(0.5f);
+        // Top-right of OUR content column, right-aligned with the search bar.
+        // The old spot was the raw screen corner, outside the CustomSongLayer
+        // frame the whole search UI sits in.
+        m_total_songs_label->setPosition({m_content_cx + 194.f, total_height + 64.f});
         m_mainLayer->addChild(m_total_songs_label);
-
-        // Filter/sort toggler strip, togglable from settings
-        if (Mod::get()->getSettingValue<bool>("show-filters")) {
-            this->setupFilterMenu(win_size);
-        }
 
         auto menu = CCMenu::create();
         menu->setPosition({0, 0});
@@ -253,13 +214,13 @@ public:
         m_delete_button->getNormalImage()->setScale(s);
         m_delete_button->setPositionX(widget_width / 2.f + m_delete_button->getContentSize().width * s / 2.f + 2.f);
         auto delete_menu = CCMenu::create();
-        delete_menu->setPosition({win_size.width / 2.f, 0});
+        delete_menu->setPosition({m_content_cx, 0});
         delete_menu->addChild(m_delete_button);
         clip->addChild(delete_menu);
 
         schedule(schedule_selector(CustomSongSearchLayer::check_mouse_movement), 1.f/30.f); // 30fps cuz ynot
-        // Seed the song-change watcher so the first paint uses the real value
-        m_last_level_song_id = INT_MIN;
+        // Seed the in-use state so the first paint uses the real level value
+        syncLevelSongID();
         // Eased scrolling runs from update(); setKeypadEnabled etc. already
         // gate input, this only drives the scroll interpolation.
         this->scheduleUpdate();
@@ -284,31 +245,49 @@ public:
             move_delete_btn();
         }
 
+        syncLevelSongID();
+        refreshRowText();
+
+        m_prev_mouse_pos = mouse_pos;
+    }
+
+    // Pulls the song the editor has set and repaints the rows when it moved.
+    // A repaint only happens when the level's own value CHANGES; comparing it
+    // against m_ui_song_id instead would undo an optimistic row click before
+    // the level write behind it has landed. While no editor is open the value
+    // stays unreadable and the last known state is kept.
+    void syncLevelSongID() {
         int levelSongID = 0;
-        bool known = false;
         if (auto editorUI = EditorUI::get()) {
             if (editorUI->m_editorLayer &&
                 editorUI->m_editorLayer->m_levelSettings &&
                 editorUI->m_editorLayer->m_levelSettings->m_level) {
                 levelSongID = editorUI->m_editorLayer->m_levelSettings->m_level->m_songID;
-                known = true;
+            } else {
+                return;
             }
+        } else {
+            return;
         }
-        if (known && levelSongID != m_last_level_song_id) {
-            m_last_level_song_id = levelSongID;
+        if (m_last_level_song_known && levelSongID == m_last_level_song_id) return;
+        m_last_level_song_known = true;
+        m_last_level_song_id = levelSongID;
+        if (!m_ui_song_known || levelSongID != m_ui_song_id) {
+            m_ui_song_known = true;
+            m_ui_song_id = levelSongID;
             refreshSelectButtons();
         }
-
-        m_prev_mouse_pos = mouse_pos;
     }
 
     void move_delete_btn() {
         constexpr float height = widget_height + widget_spacing;
         constexpr float clip_height = widget_height * (n_widgets - 1);
-        int i = static_cast<int>((clip_height - m_prev_mouse_pos.y + m_y_scroll) / height);
-        bool e = (m_prev_mouse_pos.y < clip_height) && (i >= 0 && i < static_cast<int>(m_sorted.size()));
+        // Mouse -> row index, compensated for the rows' list_top_pad offset:
+        // a row's on-screen spot is "mouse + pad" in the original scheme.
+        int i = static_cast<int>((clip_height - m_prev_mouse_pos.y - list_top_pad + m_y_scroll) / height);
+        bool e = (m_prev_mouse_pos.y < clip_height - list_top_pad) && (i >= 0 && i < static_cast<int>(m_sorted.size()));
         if (e) {
-            m_delete_button->setPositionY((n_widgets - i) * height - height * 2.f + height / 2.f - 13.f + m_y_scroll);
+            m_delete_button->setPositionY((n_widgets - i) * height - height * 2.f + height / 2.f - 13.f + m_y_scroll - list_top_pad);
             m_delete_button->setTag(i);
         }
         m_delete_button->setVisible(e);
@@ -320,21 +299,6 @@ public:
         do_search();
     }
 
-    // The search/index string depends on the active filter mode, exactly like
-    // Improved-Song-Browser's handleSearch switches on SortMode.
-    std::string filterKeyFor(SongInfoObject* song) const {
-        switch (m_filterMode) {
-            case FilterMode::Priority:
-            case FilterMode::Name:
-                return std::string(song->m_songName.c_str());
-            case FilterMode::Artist:
-                return std::string(song->m_artistName.c_str());
-            case FilterMode::ID:
-                return std::to_string(song->m_songID);
-        }
-        return "";
-    }
-
     void do_search() {
         if (m_downloaded_songs.empty()) return;
         std::vector<std::pair<int, SongInfoObject*>> songs;
@@ -343,22 +307,13 @@ public:
         const bool empty_input = input_value.empty();
         for (const auto& [index_str, song] : m_downloaded_songs) {
             int score = 0;
-            const std::string key = filterKeyFor(song);
-            if (!empty_input && input_value != "." && !fts::fuzzy_match(input_value.c_str(), key.c_str(), score)) continue;
+            if (!empty_input && input_value != "." && !fts::fuzzy_match(input_value.c_str(), index_str.c_str(), score)) continue;
             songs.push_back({score, song});
         }
         if (!empty_input && songs.size() > 1) {
             std::sort(songs.begin(), songs.end(), [&](const auto& a, const auto& b) {
                 return a.first > b.first;
             });
-        } else {
-            // No query (or '.' intentional empty search): fall back to the
-            // mode's natural ordering so the list is still useful.
-            std::stable_sort(songs.begin(), songs.end(),
-                [this](const auto& a, const auto& b) { return sortLess(a.second, b.second); });
-            if (m_ascending) {
-                std::reverse(songs.begin(), songs.end());
-            }
         }
         m_sorted.clear();
         m_sorted.reserve(songs.size());
@@ -379,148 +334,6 @@ public:
         m_total_songs_label->setString(stream.str().c_str(), true);
 
         move_delete_btn();
-    }
-
-    bool sortLess(SongInfoObject* a, SongInfoObject* b) const {
-        switch (m_filterMode) {
-            case FilterMode::Priority:
-                return false; // priority ordering is GD's, leave as-is
-            case FilterMode::Artist: {
-                std::string x(a->m_artistName.c_str()), y(b->m_artistName.c_str());
-                for (auto& c : x) c = static_cast<char>(std::tolower((unsigned char)c));
-                for (auto& c : y) c = static_cast<char>(std::tolower((unsigned char)c));
-                return x < y;
-            }
-            case FilterMode::Name: {
-                std::string x(a->m_songName.c_str()), y(b->m_songName.c_str());
-                for (auto& c : x) c = static_cast<char>(std::tolower((unsigned char)c));
-                for (auto& c : y) c = static_cast<char>(std::tolower((unsigned char)c));
-                return x < y;
-            }
-            case FilterMode::ID:
-                return a->m_songID < b->m_songID;
-        }
-        return false;
-    }
-
-    void setFilterMode(FilterMode mode) {
-        m_filterMode = mode;
-        refreshFilterVisuals();
-        do_search();
-    }
-
-    void toggleOrder() {
-        m_ascending = !m_ascending;
-        refreshFilterVisuals();
-        do_search();
-    }
-
-    // Loads one of our own sprites, falling back to a GD frame so a button can
-    // never render as a broken texture. Absolute path first, because relying on
-    // CCFileUtils search paths is what made these icons vanish before.
-    static CCSprite* loadFilterIcon(ZStringView ownName, const char* fallbackFrame) {
-        const auto resPath = Mod::get()->getResourcesDir() / std::string(ownName);
-        if (auto spr = CCSprite::create(resPath.string().c_str())) {
-            return spr;
-        }
-        if (auto spr = CCSprite::create(ownName.c_str())) {
-            return spr;
-        }
-        return CCSprite::createWithSpriteFrameName(fallbackFrame);
-    }
-
-    // Filters are plain sprite items with the active state painted by hand.
-    // CCMenuItemToggler fights with GD's own selected/unselected handling and
-    // left the buttons looking permanently disabled, so its semantics are
-    // avoided entirely; the mode is stored on the item's tag.
-    CCMenuItemSpriteExtra* createFilterButton(
-        ZStringView id, CCSprite* icon,
-        geode::Function<void(CCMenuItemSpriteExtra*)> callback
-    ) {
-        if (!icon) return nullptr;
-        // geode::Function is move-only and not const-callable, so hand it over
-        // directly rather than wrapping it in a copy-capturing lambda.
-        auto item = CCMenuItemExt::createSpriteExtra(icon, std::move(callback));
-        if (!item) return nullptr;
-        item->setID(id);
-        return item;
-    }
-
-    // Paints active vs inactive. Active is brighter and slightly larger.
-    void refreshFilterVisuals() {
-        for (auto* t : m_filterTogglers) {
-            if (!t) continue;
-            const bool active = t->getTag() == static_cast<int>(m_filterMode);
-            t->setScale(active ? 0.62f : 0.5f);
-            t->setColor(active ? ccColor3B{255, 255, 255} : ccColor3B{130, 130, 130});
-            t->setOpacity(active ? 255 : 180);
-            t->setZOrder(active ? 2 : 1);
-        }
-        // The order button's "on" state is reversed ordering
-        if (m_orderButton) {
-            m_orderButton->setScale(m_ascending ? 0.62f : 0.5f);
-            m_orderButton->setColor(m_ascending ? ccColor3B{255, 255, 255} : ccColor3B{130, 130, 130});
-            m_orderButton->setOpacity(m_ascending ? 255 : 180);
-            m_orderButton->setZOrder(m_ascending ? 2 : 1);
-        }
-    }
-
-    void setupFilterMenu(const CCSize& win_size) {
-        if (m_filterMenu) return;
-        m_filterMenu = CCMenu::create();
-        m_filterMenu->setID("filter-menu"_spr);
-        // Inside the dialog, just left of the search input, instead of pinned
-        // to the top of the screen where it looked detached.
-        m_filterMenu->setPosition({win_size.width / 2.f - 235.f, total_height_const + 28.51f});
-        m_filterMenu->setScale(0.45f);
-        m_filterMenu->setLayout(
-            SimpleRowLayout::create()
-                ->setMainAxisAlignment(MainAxisAlignment::Start)
-                ->setMainAxisScaling(AxisScaling::Fit)
-                ->setCrossAxisScaling(AxisScaling::Fit)
-                ->setGap(3.f)
-        );
-        m_mainLayer->addChild(m_filterMenu);
-
-        // order / reverse toggle (GD frame)
-        m_orderButton = createFilterButton(
-            "order-btn"_spr, CCSprite::createWithSpriteFrameName("GJ_sortIcon_001.png"),
-            [this](CCMenuItemSpriteExtra*) { this->toggleOrder(); }
-        );
-        if (m_orderButton) {
-            m_orderButton->setTag(-1);
-            m_filterMenu->addChild(m_orderButton);
-        }
-
-        auto spacer = CCNode::create();
-        spacer->setContentSize({1.f, 3.f});
-        m_filterMenu->addChild(spacer);
-
-        struct Spec { FilterMode mode; const char* frame; const char* own; const char* id; };
-        const Spec specs[] = {
-            {FilterMode::Priority, "GJ_timeIcon_001.png", nullptr, "priority-btn"},
-            {FilterMode::Name,     "GJ_noteIcon_001.png", nullptr, "name-btn"},
-            {FilterMode::Artist,   nullptr,               "artist_icon.png", "artist-btn"},
-            {FilterMode::ID,       nullptr,               "id_icon.png",     "id-btn"},
-        };
-
-        for (const auto& spec : specs) {
-            CCSprite* icon = spec.own
-                ? loadFilterIcon(spec.own, spec.frame ? spec.frame : "GJ_noteIcon_001.png")
-                : CCSprite::createWithSpriteFrameName(spec.frame);
-            if (!icon) continue;
-            auto* btn = createFilterButton(spec.id, icon,
-                [this, spec](CCMenuItemSpriteExtra*) {
-                    this->setFilterMode(spec.mode);
-                });
-            if (!btn) continue;
-            btn->setTag(static_cast<int>(spec.mode));
-            m_filterTogglers.push_back(btn);
-            m_filterMenu->addChild(btn);
-        }
-
-        this->refreshFilterVisuals();
-        m_filterMenu->updateLayout();
     }
 
     void on_close(CCObject*) {
@@ -563,6 +376,15 @@ public:
 
     void refreshSelectButtons();
 
+    // Repaints rows whose song text was changed in place (Jukebox nong picks).
+    void refreshRowText();
+
+    // Ends a preview that finished on its own and flips the rows back; needs
+    // SimpleSongWidget complete, so the body is out-of-line.
+    void checkPreviewEnd(float dt);
+
+    bool isSongInUse(int songID) const { return m_ui_song_known && m_ui_song_id == songID; }
+
     void update_scroll_elements(bool force = false);
 
     void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) override {
@@ -589,6 +411,7 @@ public:
     // Expo-out easing toward m_target_scroll. Time-corrected, so it feels the
     // same at any framerate: factor = 1 - exp(-stiffness * dt).
     void update(float dt) override {
+        checkPreviewEnd(dt);
         if (m_sorted.empty()) return;
         float factor;
         if (dt > 0.f) {
@@ -631,9 +454,18 @@ public:
 class SimpleSongWidget : public CCNode {
 protected:
     SongInfoObject* m_song = nullptr;
+    // Name/artist as last painted. The periodic row sweep compares the bound
+    // song's live strings against these, so Jukebox mutating the shared
+    // object (a picked nong swaps the name/artist in place) repaints the row
+    // without waiting for a scroll rebind.
+    std::string m_painted_name;
+    std::string m_painted_artist;
     CCLabelBMFont* m_name_label = nullptr;
     CCLabelBMFont* m_artist_label = nullptr;
-    CCSprite* m_nong_icon = nullptr;
+    CCMenuItemSpriteExtra* m_nong_item = nullptr;
+    // Widest the name/artist text may get before it would slide under the
+    // buttons; measured off the real button layout in init().
+    float m_text_max_width = 250.f;
     CCMenuItemSpriteExtra* m_play_button = nullptr;
     CCMenuItemSpriteExtra* m_select_button = nullptr;
     CustomSongSearchLayer* m_parent = nullptr;
@@ -647,28 +479,44 @@ public:
         bg->setContentSize({width, height});
         bg->setZOrder(-1);
         addChild(bg);
+        // Text block hugs the row's left edge and reads like the classic song
+        // browser: name just above the middle of the row, artist just below
+        // it. NOTE: widget space is centered (y in -25..+25, top edge = +25),
+        // so these offsets are relative to the row's middle. Kept clear of the
+        // corner pin disc (which only occupies the top-left corner).
         m_name_label = CCLabelBMFont::create("?", "bigFont.fnt");
         m_name_label->setAnchorPoint({0, 0.5f});
-        m_name_label->setPosition({-width / 2.f + 8.f, height / 2.f - 13.5f});
+        m_name_label->setPosition({-width / 2.f + 12.5f, height / 2.f - 15.f});
         addChild(m_name_label);
         m_artist_label = CCLabelBMFont::create("who", "goldFont.fnt");
-        m_artist_label->setAnchorPoint({0, 1});
-        m_artist_label->setPosition({-width / 2.f + 8.f, height / 2.f - 21.6f});
-        m_artist_label->setScale(0.6f);
+        m_artist_label->setAnchorPoint({0, 0.5f});
+        m_artist_label->setPosition({-width / 2.f + 12.5f, height / 2.f - 32.f});
+        m_artist_label->setScale(0.55f);
         addChild(m_artist_label);
-        // NONG disc for the row. Jukebox registers JB_PinDisc.png in a global
-        // spritesheet, so the frame resolves whenever it is installed; the
-        // sprite just stays hidden otherwise.
-        m_nong_icon = CCSprite::createWithSpriteFrameName("JB_PinDisc.png");
-        if (m_nong_icon) {
-            m_nong_icon->setPosition({-width / 2.f + 16.f, height / 2.f + 15.f});
-            m_nong_icon->setScale(0.45f);
-            m_nong_icon->setID("nong-symbol"_spr);
-            m_nong_icon->setVisible(false);
-            addChild(m_nong_icon);
-        }
         auto menu = CCMenu::create();
         addChild(menu);
+        // NONG pin disc, pinned on the row's top-left corner the way Jukebox
+        // pins it on its own song widgets - half the disc rides outside the
+        // frame. Clicking it opens Jukebox's nong picker for this song.
+        // Drawn from our own copy of the texture, so no cross-mod spritesheet
+        // frame/load race can ever magenta it out. The scale is derived from
+        // the packed frame size (sd/hd/uhd sheets differ 4x) so it always
+        // lands at ~22 design units.
+        if (auto frame = CCSpriteFrameCache::get()->spriteFrameByName("nong_disc.png"_spr)) {
+            auto disc = CCSprite::createWithSpriteFrame(frame);
+            const float frame_height = disc->getContentSize().height;
+            disc->setScale(frame_height > 1.f ? 22.f / frame_height : 0.35f);
+            m_nong_item = CCMenuItemExt::createSpriteExtra(disc, [this](CCMenuItemSpriteExtra*) {
+                this->on_nong();
+            });
+            if (m_nong_item) {
+                m_nong_item->setID("nong-symbol"_spr);
+                // Row-local target: the row's top-left corner. The menu sits
+                // at y=+1, so the -1 lands the disc dead on the corner.
+                m_nong_item->setPosition({-width / 2.f, height / 2.f - 1.f});
+                menu->addChild(m_nong_item);
+            }
+        }
         m_play_button = CCMenuItemSpriteExtra::create(
             CCSprite::createWithSpriteFrameName("GJ_playMusicBtn_001.png"),
             this,
@@ -686,98 +534,215 @@ public:
         );
         menu->setPosition({0, 1});
         menu->addChild(m_select_button);
+        // How far text may reach before it would slide under the buttons:
+        // the select button's real left edge, minus the label origin, minus
+        // a small breathing gap. Measured here so a sheet-size change can't
+        // silently reintroduce the overlap.
+        const float buttons_left = m_select_button->getPositionX() - m_select_button->getScaledContentSize().width / 2.f;
+        m_text_max_width = buttons_left - m_name_label->getPositionX() - 6.f;
         return true;
+    }
+
+    // Swaps the frame on a menu item's existing sprite. Rebuilding the sprite
+    // through setSprite() here could leave the previous one stacked
+    // underneath; setDisplayFrame just re-points the one sprite.
+    static void setButtonFrame(CCMenuItemSpriteExtra* button, const char* frame_name) {
+        if (!button) return;
+        auto frame = CCSpriteFrameCache::get()->spriteFrameByName(frame_name);
+        if (!frame) return;
+        if (auto sprite = typeinfo_cast<CCSprite*>(button->getNormalImage())) {
+            sprite->setDisplayFrame(frame);
+            return;
+        }
+        button->setSprite(CCSprite::createWithSpriteFrame(frame));
+        button->updateSprite();
     }
 
     // Swaps the select button between "Use" and "In Use" for whichever song the
     // level currently has set, mirroring CustomSongWidget::songStateChanged.
+    // The layer owns the level's song state - reading EditorUI per-row went
+    // stale while the delegate's write was still in flight.
     void update_select_btn() {
         if (!m_song || !m_select_button) return;
-        int currentID = 0;
-        bool known = false;
-        if (auto editorUI = EditorUI::get()) {
-            if (editorUI->m_editorLayer &&
-                editorUI->m_editorLayer->m_levelSettings &&
-                editorUI->m_editorLayer->m_levelSettings->m_level) {
-                currentID = editorUI->m_editorLayer->m_levelSettings->m_level->m_songID;
-                known = true;
+        const bool selected = m_parent && m_parent->isSongInUse(m_song->m_songID);
+        m_select_button->setEnabled(!selected);
+        setButtonFrame(m_select_button,
+            selected ? "GJ_selectSongOnBtn_001.png" : "GJ_selectSongBtn_001.png");
+    }
+
+    // Fits a string label into `max_width`: scaled down from `base_scale` at
+    // most, never below `min_scale`. Shrinking is the primary mechanism, so
+    // any normal song title lands whole; the "..." cut only survives as a
+    // last resort for absurd names that overflow even at `min_scale`, and
+    // the cut point is whitespace-trimmed so it can't read "STRIKES ...".
+    // The cut point is binary-searched, so this costs ~log2(len) rebuilds.
+    static void fitLabel(CCLabelBMFont* label, const std::string& text,
+                         float base_scale, float max_width, float min_scale) {
+        if (!label) return;
+        label->setString(text.c_str(), true);
+        const float content_width = label->getContentSize().width;
+        if (content_width <= 0.f || max_width <= 0.f) {
+            label->setScale(base_scale);
+            return;
+        }
+        const float scale = (std::min)(base_scale, max_width / content_width);
+        if (scale >= min_scale) {
+            label->setScale(scale);
+            return;
+        }
+        static const std::string ellipsis = "...";
+        const float budget = max_width / min_scale;
+        size_t lo = 0, hi = text.size();
+        std::string best = ellipsis;
+        while (lo <= hi) {
+            const size_t mid = lo + (hi - lo) / 2;
+            std::string candidate = text.substr(0, mid) + ellipsis;
+            label->setString(candidate.c_str(), true);
+            if (label->getContentSize().width <= budget) {
+                best = std::move(candidate);
+                lo = mid + 1;
+            } else {
+                if (mid == 0) break;
+                hi = mid - 1;
             }
         }
-        const bool selected = known && currentID == m_song->m_songID;
-        m_select_button->setEnabled(!selected);
-        m_select_button->setSprite(CCSprite::createWithSpriteFrameName(
-            selected ? "GJ_selectSongOnBtn_001.png" : "GJ_selectSongBtn_001.png"
-        ));
-        m_select_button->updateSprite();
+        // Trim before the ellipsis: trailing spaces read as "STRIKES ..." and
+        // a dangling UTF-8 continuation byte would be malformed; keep the
+        // string clean for both the label and any log use.
+        size_t cut = best.size() - ellipsis.size();
+        for (;;) {
+            const size_t before = cut;
+            while (cut > 0 && (best[cut - 1] == ' ' || best[cut - 1] == '\t')) --cut;
+            while (cut > 0 && (static_cast<unsigned char>(best[cut - 1]) & 0xC0) == 0x80) --cut;
+            if (cut == before) break;
+        }
+        if (cut < best.size() - ellipsis.size()) best = best.substr(0, cut) + ellipsis;
+        label->setString(best.c_str(), true);
+        label->setScale(min_scale);
     }
 
     void set_song(SongInfoObject* song) {
         m_song = song;
-        auto nong_it = nongCache().find(song->m_songID);
-        const bool hasNong = nong_it != nongCache().end();
-        const bool useNongNames =
-            hasNong && Mod::get()->getSettingValue<bool>("use-nong-metadata");
-        // Jukebox may have already swapped name/artist on the SongInfoObject;
-        // the cache lets us prefer those without re-reading its state.
+        m_painted_artist = song->m_artistName.c_str();
+        m_painted_name = song->m_songName.c_str();
         // NB: Geode 5.11's CCLabelBMFont::setString takes (const char*, bool).
-        const std::string artistText =
-            useNongNames ? nong_it->second.artist : song->m_artistName.c_str();
-        const std::string nameText =
-            useNongNames ? nong_it->second.name : song->m_songName.c_str();
-        m_artist_label->setString(artistText.c_str(), true);
-        m_name_label->setString(nameText.c_str(), true);
-        float scale = (std::min)(0.8f, 250.f / m_name_label->getContentSize().width);
-        m_name_label->setScale((std::min)(scale, 15.f / m_name_label->getContentSize().height));
+        fitLabel(m_artist_label, m_painted_artist, 0.55f, m_text_max_width, 0.35f);
+        fitLabel(m_name_label, m_painted_name, 0.55f, m_text_max_width, 0.3f);
         update_nong_icon();
         update_select_btn();
         update_play_btn();
     }
 
-    // Renders Jukebox's own disc sprite in the row. No-op when Jukebox is
-    // missing or the setting is off, so the mod stays fully functional.
+    // Repaints the row when the bound song's text changed underneath us.
+    // Jukebox's nong picker rewrites the shared SongInfoObject in place, so
+    // this is what lets the row show the new name/artist the moment the pick
+    // commits - no rebind, and no hook into Jukebox's own layer needed.
+    void refresh_song_text() {
+        if (!m_song) return;
+        std::string name(m_song->m_songName.c_str());
+        std::string artist(m_song->m_artistName.c_str());
+        if (name == m_painted_name && artist == m_painted_artist) return;
+        m_painted_name = std::move(name);
+        m_painted_artist = std::move(artist);
+        fitLabel(m_artist_label, m_painted_artist, 0.55f, m_text_max_width, 0.35f);
+        fitLabel(m_name_label, m_painted_name, 0.55f, m_text_max_width, 0.3f);
+    }
+
+    // The disc mirrors Jukebox's own per-widget button, so it shows on every
+    // row whenever Jukebox is installed and the setting is on. Without
+    // Jukebox there is no picker to open, so the disc stays hidden.
     void update_nong_icon() {
-        if (!m_nong_icon) return;
-        bool show = false;
-        if (m_song && Mod::get()->getSettingValue<bool>("nong-symbols")) {
-            auto it = nongCache().find(m_song->m_songID);
-            if (it != nongCache().end()) {
-                auto frame = CCSpriteFrameCache::get()->spriteFrameByName(it->second.discFrame.c_str());
-                if (frame) {
-                    m_nong_icon->setDisplayFrame(frame);
-                    m_nong_icon->setColor(it->second.verified ? ccColor3B{255, 236, 140} : ccColor3B{255, 255, 255});
-                    show = true;
-                }
-            }
-        }
-        m_nong_icon->setVisible(show);
+        if (!m_nong_item) return;
+        m_nong_item->setVisible(m_song != nullptr &&
+            Mod::get()->getSettingValue<bool>("nong-symbols") && jukeboxPresent());
     }
 
     void update_play_btn() {
         if (!m_song || !m_parent) return;
         auto song_path = MusicDownloadManager::sharedState()->pathForSong(m_song->m_songID);
-        const auto sprite = m_parent->isPreviewing(song_path) ? "GJ_stopMusicBtn_001.png" : "GJ_playMusicBtn_001.png";
-        // Prefer setSprite (Geode addition) over setNormalImage, which skips
-        // CCMenuItemSpriteExtra sizing operations.
-        m_play_button->setSprite(CCSprite::createWithSpriteFrameName(sprite));
-        m_play_button->updateSprite();
+        setButtonFrame(m_play_button,
+            m_parent->isPreviewing(song_path) ? "GJ_stopMusicBtn_001.png" : "GJ_playMusicBtn_001.png");
+    }
+
+    static CCNode* findNodeByID(CCNode* root, const std::string& id) {
+        if (!root) return nullptr;
+        if (root->getID() == id) return root;
+        if (auto children = root->getChildren()) {
+            for (auto* child : CCArrayExt<CCNode*>(children)) {
+                if (auto* found = findNodeByID(child, id)) return found;
+            }
+        }
+        return nullptr;
+    }
+
+    // Jukebox exposes no API for other mods, but every CustomSongWidget it
+    // manages carries a disc whose callback opens its nong picker for that
+    // widget's song. So: build a throwaway widget for this row's song, find
+    // the disc Jukebox adds to it, and activate that. The picker keeps the
+    // widget alive through a strong ref while it's shown, which is exactly
+    // the lifetime the throwaway widget needs - no manual delete, ever.
+    void on_nong() {
+        if (!m_song) return;
+        auto jb = Loader::get()->getLoadedMod("fleym.nongd");
+        if (!jb) return;
+        auto widget = CustomSongWidget::create(m_song, nullptr,
+            false, false, false, false, false, false, 0);
+        if (!widget) {
+            log::warn("SongSearch: nong widget creation failed");
+            return;
+        }
+        auto btn = typeinfo_cast<CCMenuItemSpriteExtra*>(
+            findNodeByID(widget, jb->getID() + "/nong-button"));
+        if (!btn) {
+            // The mod-id prefix is what _spr() expands to; probe the bare
+            // node id too in case that ever changes.
+            btn = typeinfo_cast<CCMenuItemSpriteExtra*>(findNodeByID(widget, "nong-button"));
+        }
+        if (!btn) {
+            log::warn("SongSearch: jukebox nong button not found");
+            return;
+        }
+        log::info("SongSearch: opening jukebox nong picker for song {}", m_song->m_songID);
+        btn->activate();
     }
 
     void on_select(CCObject* obj) {
         (void)obj;
         if (!m_parent || !m_parent->m_parent || !m_song) return;
-        // Forward through the layer's CustomSongDelegate (mirrors
-        // CustomSongWidget::onSelect -> m_songDelegate->songIDChanged).
-        if (auto delegate = m_parent->m_parent->m_songDelegate) {
-            delegate->songIDChanged(m_song->m_songID);
+        auto layer = m_parent->m_parent;
+        const int songID = m_song->m_songID;
+        // The 2.1 mod applied the pick by writing the level's song directly
+        // (m_parent->m_levelSettings->m_level->songID). 2.2's CustomSongLayer
+        // dropped m_levelSettings; its delegate exposes it via
+        // getLevelSettings(). Keep the delegate notified like
+        // CustomSongWidget::onSelect does, but never rely on it alone - it
+        // only records pending state, which is why the row snapped back.
+        LevelSettingsObject* settings = nullptr;
+        if (auto delegate = layer->m_songDelegate) {
+            settings = delegate->getLevelSettings();
+            delegate->songIDChanged(songID);
         }
+        if (!settings) {
+            if (auto editorUI = EditorUI::get()) {
+                if (editorUI->m_editorLayer) {
+                    settings = editorUI->m_editorLayer->m_levelSettings;
+                }
+            }
+        }
+        if (settings && settings->m_level) {
+            settings->m_level->m_songID = songID;
+        }
+        log::info("SongSearch: select {} (delegate {}, settings {})", songID,
+            layer->m_songDelegate != nullptr, settings != nullptr);
         MusicDownloadManager::sharedState()->songStateChanged();
-        if (m_parent->m_parent->m_songWidget) {
-            m_parent->m_parent->m_songWidget->updateSongObject(m_song);
+        if (layer->m_songWidget) {
+            layer->m_songWidget->updateSongObject(m_song);
         }
-        // The level's songID just changed, so every row's "Use" state is stale
-        for (auto& widget : m_parent->m_scroll_elements) {
-            if (widget) widget->update_select_btn();
-        }
+        // Paint the click's outcome immediately; the sync above only
+        // overrides this when the level's value moves somewhere else.
+        m_parent->m_ui_song_known = true;
+        m_parent->m_ui_song_id = songID;
+        m_parent->refreshSelectButtons();
     }
 
     void on_play(CCObject* obj) {
@@ -811,6 +776,32 @@ public:
 void CustomSongSearchLayer::refreshSelectButtons() {
     for (auto& widget : m_scroll_elements) {
         if (widget) widget->update_select_btn();
+    }
+}
+
+// Jukebox rewrites the shared song's name/artist in place when a nong is
+// picked or cleared, so rows would otherwise keep stale text until the next
+// scroll rebind. A sweep of the six bound rows is a handful of string
+// compares per tick; only rows whose text actually moved are rebuilt.
+void CustomSongSearchLayer::refreshRowText() {
+    for (auto& widget : m_scroll_elements) {
+        if (widget) widget->refresh_song_text();
+    }
+}
+
+// Same reason as refreshSelectButtons: touching row members needs the complete
+// type. A preview ends on its own when the file runs out (playMusic is called
+// with shouldLoop false), and 2.2081 removed isBackgroundMusicPlaying - so
+// poll the channel we play on directly. The grace period avoids racing the
+// engine's start.
+void CustomSongSearchLayer::checkPreviewEnd(float dt) {
+    if (!m_previewing) return;
+    m_preview_elapsed += dt;
+    if (m_preview_elapsed < 0.5f) return;
+    if (FMODAudioEngine::sharedEngine()->isMusicPlaying(0)) return;
+    stopPreview();
+    for (auto& widget : m_scroll_elements) {
+        if (widget) widget->update_play_btn();
     }
 }
 
@@ -865,7 +856,13 @@ void CustomSongSearchLayer::update_scroll_elements(bool force) {
             auto song = m_sorted[actual_i];
             widget->setVisible(true);
             if (force) widget->set_song(song);
-            widget->setPositionY((n_widgets - i) * height + ::fmod(m_y_scroll, height) - height * 2.f);
+            widget->setPositionY((n_widgets - i) * height + ::fmod(m_y_scroll, height) - height * 2.f - list_top_pad);
+            // Rows lower on screen draw over rows higher up, so each row's
+            // corner disc stays on top of the row above it even after
+            // scrolling has recycled the row nodes.
+            if (widget->getZOrder() != static_cast<int>(i)) {
+                widget->setZOrder(static_cast<int>(i));
+            }
         } else {
             widget->setVisible(false);
         }
@@ -882,36 +879,6 @@ class $modify(SongSearchCustomSongLayer, CustomSongLayer) {
             return;
         }
         (void)sender;
-        // Refresh NONG data before the dialog opens: our rows are built from
-        // the cache, and GJSongBrowser's widgets are the only place Jukebox
-        // has drawn discs at this point.
-        harvestSceneWidgets();
         CustomSongSearchLayer::create(this)->show();
-    }
-};
-
-// Spy hook: Jukebox draws its own NONG disc on CustomSongWidget and ships no
-// public API, so harvest the icon and metadata it already resolved and
-// repaint them in our rows. Only active while Jukebox is installed; without
-// it this hook is a cheap no-op.
-class $modify(SongSearchJukeboxSpy, CustomSongWidget) {
-    bool init(SongInfoObject* song, CustomSongDelegate* delegate, bool showSelect,
-              bool showPlay, bool showDownload, bool isRobtopSong, bool unk1,
-              bool isMusicLibrary, int unk2) {
-        if (!CustomSongWidget::init(song, delegate, showSelect, showPlay, showDownload,
-                                    isRobtopSong, unk1, isMusicLibrary, unk2)) {
-            return false;
-        }
-        // Hook order between mods is not guaranteed, so defer harvesting until
-        // Jukebox has laid out its disc whether its hook ran before or after
-        // ours. One frame is plenty.
-        this->scheduleOnce(schedule_selector(SongSearchJukeboxSpy::delayedHarvest), 0.05f);
-        return true;
-    }
-
-    void delayedHarvest(float) {
-        if (!jukeboxPresent()) return;
-        if (!Mod::get()->getSettingValue<bool>("nong-symbols")) return;
-        harvestJukeboxWidget(this, this->m_songInfoObject);
     }
 };
