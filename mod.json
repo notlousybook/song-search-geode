@@ -8,12 +8,12 @@
 	},
 	"id": "matcool.song-search",
 	"name": "Song Search",
-	"version": "v0.2.0",
+	"version": "v0.2.8",
 	"developers": [
 		"notlousybook",
 		"matcool"
 	],
-	"description": "Search and filter downloaded songs with fuzzy matching, plus sortable filter buttons and Jukebox NONG support.",
+	"description": "Search your downloaded songs with fuzzy matching, plus Jukebox NONG support.",
 	"tags": [
 		"music",
 		"interface",
@@ -30,12 +30,6 @@
 			"description": "Turn the search dialog off entirely and restore the default song browser.",
 			"default": false
 		},
-		"show-filters": {
-			"type": "bool",
-			"name": "Show filter buttons",
-			"description": "Show the sort/filter toggle buttons in the corner of the search dialog.",
-			"default": true
-		},
 		"jukebox": {
 			"type": "title",
 			"name": "Jukebox NONG support"
@@ -43,26 +37,22 @@
 		"nong-symbols": {
 			"type": "bool",
 			"name": "Show NONG symbols",
-			"description": "Show a disc on songs that have a NONG set in Jukebox. Requires Jukebox to be installed; does nothing without it.",
-			"default": true
-		},
-		"use-nong-metadata": {
-			"type": "bool",
-			"name": "Use NONG name and artist",
-			"description": "Display the NONG's name and artist in results when available instead of the original Newgrounds song.",
+			"description": "Draw Jukebox's pin disc on each song row's top-left corner; clicking it opens Jukebox's nong picker for that song. Requires Jukebox to be installed; does nothing without it.",
 			"default": true
 		}
 	},
 	"resources": {
-		"sprites": [
-			"resources/*.png"
-		]
+		"spritesheets": {
+			"SongSearchSheet": [
+				"resources/*.png"
+			]
+		}
 	},
 	"links": {
-		"source": "https://github.com/matcool/small-gd-mods"
+		"source": "https://github.com/notlousybook/song-search-geode"
 	},
 	"issues": {
-		"info": "Report issues on the GitHub repository of the original mod, or in the Song Search thread.",
-		"url": "https://github.com/matcool/small-gd-mods/issues"
+		"info": "Report issues on the GitHub repository of this port.",
+		"url": "https://github.com/notlousybook/song-search-geode/issues"
 	}
 }
