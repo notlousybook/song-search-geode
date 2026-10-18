@@ -5,6 +5,10 @@
 An in-game search dialog for your downloaded songs, with fuzzy matching and
 Jukebox NONG support.
 
+![Song Search open in the editor](frame:matcool.song-search/screenshot.png?width=300)
+
+[Full-size screenshot on GitHub](https://github.com/notlousybook/song-search-geode/blob/main/screenshot.png)
+
 The search dialog replaces the default song browser in the editor's song menu. As you
 type, songs are ranked by how well they match — matching across both the song name and
 the artist — so short, approximate queries still find the right track.

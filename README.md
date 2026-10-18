@@ -1,3 +1,5 @@
+<p align="center"><img src="logo.png" width="128" alt="Song Search icon"></p>
+
 # Song Search (Geode port)
 
 > This mod was ported to geode using AI. If you don't like using AI ported mods, feel free to not use it.
@@ -12,6 +14,8 @@ breaking on every game update.
 
 Replaces the editor's song browser with a searchable, scrollable list of your
 downloaded songs.
+
+![Song Search in the editor — fuzzy results, Jukebox's pin disc, USE/IN USE and preview buttons](screenshot.png)
 
 ## Features
 

@@ -2,6 +2,8 @@
 
 - the package now ships `about.md`, `changelog.md` and `support.md`
 - builds run on GitHub Actions and releases live on GitHub
+- builds for macOS, android and ios now - the row-hover delete button stays windows-only
+- readme and about page got a screenshot
 - mod links point at this repo
 
 # v0.2.7
