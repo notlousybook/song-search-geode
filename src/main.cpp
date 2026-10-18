@@ -233,6 +233,7 @@ public:
     // original browser, the editor, or another mod, so the rows are re-painted
     // whenever the level's songID is observed to change.
     void check_mouse_movement(float) {
+#ifdef GEODE_IS_WINDOWS
         const auto director = CCDirector::sharedDirector();
         const auto win_size = director->getWinSize();
         auto gl = director->getOpenGLView();
@@ -245,10 +246,11 @@ public:
             move_delete_btn();
         }
 
+        m_prev_mouse_pos = mouse_pos;
+#endif
+
         syncLevelSongID();
         refreshRowText();
-
-        m_prev_mouse_pos = mouse_pos;
     }
 
     // Pulls the song the editor has set and repaints the rows when it moved.
@@ -280,6 +282,14 @@ public:
     }
 
     void move_delete_btn() {
+#ifndef GEODE_IS_WINDOWS
+        // Row hover needs the mouse position, which the GD cocos builds for
+        // macOS and mobile don't expose; without it there's no way to tell
+        // which row is pointed at, so the delete button stays hidden.
+        m_delete_button->setVisible(false);
+        m_delete_button->setEnabled(false);
+        return;
+#endif
         constexpr float height = widget_height + widget_spacing;
         constexpr float clip_height = widget_height * (n_widgets - 1);
         // Mouse -> row index, compensated for the rows' list_top_pad offset:
